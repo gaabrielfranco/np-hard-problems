@@ -1,6 +1,6 @@
 FLAGS= -std=c++17 -O3
 set-cover: main.o
-	g++ $(FLAGS) main.o -o set-cover.out
+	g++ $(FLAGS) main.o -o set-cover
 
 main.o: ../main.cpp
 	g++ $(FLAGS) -c ../main.cpp
