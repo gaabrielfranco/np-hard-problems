@@ -1,0 +1,13 @@
+BasedOnStyle: Google
+Language: Cpp
+
+IndentWidth: 4
+BreakBeforeBraces: Allman
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
