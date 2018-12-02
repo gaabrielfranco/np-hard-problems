@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <climits>
 #include <iostream>
+#include <set>
 #include <vector>
 
 size_t calc_cost(size_t* costs, size_t m, std::vector<size_t> subset)
@@ -83,9 +85,12 @@ int main()
 
     scanf("%zu %zu", &n, &m);
     std::vector<std::vector<size_t>> G;
+    std::vector<std::vector<size_t>> G_reverse;
     size_t* costs = (size_t*)malloc(m * sizeof(size_t));
     std::vector<size_t> v;
+    std::set<size_t> greedy_sol;
 
+    // Brute force solution
     for (size_t i = 0; i < m; i++)
     {
         while (scanf("%zu%c", &element, &c))
@@ -106,7 +111,64 @@ int main()
         scanf("%zu", &costs[i]);
     }
 
+    std::cout << "\nUsing Brute Force\n";
     gen_subsets(G, n, m, costs);
 
+    // Greedy solution
+    for (size_t i = 0; i < n; i++)
+    {
+        G_reverse.push_back(v);
+    }
+
+    for (size_t i = 0; i < m; i++)
+    {
+        for (size_t j = 0; j < G[i].size(); j++)
+        {
+            if (G_reverse[G[i][j] - 1].empty())
+            {
+                // Putting the subset
+                G_reverse[G[i][j] - 1].push_back(i);
+            }
+            else
+            {
+                // G_reverse[G[i][j] - 1].push_back(i);
+                bool was_inserted = false;
+
+                // Putting the subset ordered by cost
+                for (size_t k = 0; k < G_reverse[G[i][j] - 1].size(); k++)
+                {
+                    if (costs[i] <= costs[G_reverse[G[i][j] - 1][k]])
+                    {
+                        G_reverse[G[i][j] - 1].insert(
+                            G_reverse[G[i][j] - 1].begin() + k, i);
+                        was_inserted = true;
+                        break;
+                    }
+                }
+
+                if (!was_inserted)
+                {
+                    G_reverse[G[i][j] - 1].push_back(i);
+                }
+            }
+        }
+    }
+
+    for (size_t i = 0; i < n; i++)
+    {
+        greedy_sol.insert(G_reverse[i][0]);
+    }
+
+    size_t min_cost = 0;
+
+    std::cout << "\nUsing Greedy\n";
+    std::cout << "Solution:\n{ ";
+    for (auto i = greedy_sol.begin(); i != greedy_sol.end(); i++)
+    {
+        std::cout << *i + 1 << " ";
+        min_cost += costs[*i];
+    }
+    std::cout << "} with cost = ";
+    std::cout << min_cost << std::endl;
     return 0;
 }
