@@ -23,7 +23,7 @@ typedef struct {
 } Game;
 
 typedef enum {
- 	NO_ISLAND = -1,
+ 	EMPTY = -1,
  	VERTICAL_BRIDGE = -2,
  	HORIZONTAL_BRIDGE = -3,
  	BORDER = -4
@@ -51,7 +51,7 @@ void create(Game* g) {
 	for (int i = 0; i < 3 * g->n; i++) {
 		g->board[i] = (int*)malloc(3 * g->m * sizeof(int));
 		for (int j = 0; j < 3 * g->m; j++)
-			g->board[i][j] = NO_ISLAND;
+			g->board[i][j] = EMPTY;
 	}
 
 	g->islands = (Island*)malloc(n_islands * sizeof(Island));
@@ -85,7 +85,7 @@ void print(Game* g) {
 
 	for (int i = 0; i < 3 * g->n; i++) {
 		for (int j = 0; j < 3 * g->m; j++) {
-			if (g->board[i][j] == NO_ISLAND)
+			if (g->board[i][j] == EMPTY)
 				printf("   ");
 			else if (g->board[i][j] == VERTICAL_BRIDGE)
 				printf(" | ");
@@ -109,12 +109,13 @@ void print(Game* g) {
  * Returns 0 if there was an intersection.
  */
 int addBridge(Game* g, int id, Direction dir) {
-	int success = 1;
+	int success = 1, i;
 
-	if (dir == UP) {
-		int i = g->islands[id].line;
+	switch (dir) {
+	case UP:
+		i = g->islands[id].line;
 
-		while (g->board[--i][g->islands[id].column] == -1)
+		while (g->board[--i][g->islands[id].column] == EMPTY)
 			g->board[i][g->islands[id].column] = VERTICAL_BRIDGE;
 
 		// If couldn't add bridge
@@ -124,11 +125,13 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (i < g->islands[id].line - 1)
 				g->board[++i][g->islands[id].column] = -1;
 		}
-	}
-	else if (dir == DOWN) {
-		int i = g->islands[id].line;
 
-		while (g->board[++i][g->islands[id].column] == -1)
+		break;
+
+	case DOWN:
+		i = g->islands[id].line;
+
+		while (g->board[++i][g->islands[id].column] == EMPTY)
 			g->board[i][g->islands[id].column] = VERTICAL_BRIDGE;
 
 		// If couldn't add bridge
@@ -138,11 +141,13 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (i > g->islands[id].line + 1)
 				g->board[--i][g->islands[id].column] = -1;
 		}
-	}
-	else if (dir == LEFT) {
-		int i = g->islands[id].column;
 
-		while (g->board[g->islands[id].line][--i] == -1)
+		break;
+
+	case LEFT:
+		i = g->islands[id].column;
+
+		while (g->board[g->islands[id].line][--i] == EMPTY)
 			g->board[g->islands[id].line][i] = HORIZONTAL_BRIDGE;
 
 		// If couldn't add bridge
@@ -152,11 +157,13 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (i < g->islands[id].line - 1)
 				g->board[g->islands[id].line][++i] = -1;
 		}
-	}
-	else {
-		int i = g->islands[id].column;
 
-		while (g->board[g->islands[id].line][++i] == -1)
+		break;
+
+	case RIGHT:
+		i = g->islands[id].column;
+
+		while (g->board[g->islands[id].line][++i] == EMPTY)
 			g->board[g->islands[id].line][i] = HORIZONTAL_BRIDGE;
 
 		// If couldn't add bridge
@@ -169,6 +176,46 @@ int addBridge(Game* g, int id, Direction dir) {
 	}
 
 	return success;
+}
+
+/*
+ * Removes the bridge from 'g->islands[id]' to next island in direction 'dir'.
+ * Assumes the bridge exists.
+ */
+void removeBridge(Game* g, int id, Direction dir) {
+	int i;
+
+	switch (dir) {
+	case UP:
+		i = g->islands[id].line;
+
+		while (g->board[--i][g->islands[id].column] == VERTICAL_BRIDGE)
+			g->board[i][g->islands[id].column] = EMPTY;
+
+		break;
+
+	case DOWN:
+		i = g->islands[id].line;
+
+		while (g->board[++i][g->islands[id].column] == VERTICAL_BRIDGE)
+			g->board[i][g->islands[id].column] = EMPTY;
+
+		break;
+
+	case LEFT:
+		i = g->islands[id].column;
+
+		while (g->board[g->islands[id].line][--i] == HORIZONTAL_BRIDGE)
+			g->board[g->islands[id].line][i] = EMPTY;
+
+		break;
+
+	case RIGHT:
+		i = g->islands[id].column;
+
+		while (g->board[g->islands[id].line][++i] == HORIZONTAL_BRIDGE)
+			g->board[g->islands[id].line][i] = EMPTY;
+	}
 }
 
 /*
@@ -196,11 +243,20 @@ int main() {
 
 	addBridge(&game, 9, UP);
 	addBridge(&game, 9, DOWN);
-	//addBridge(&game, 9, LEFT);
 	addBridge(&game, 9, RIGHT);
 	addBridge(&game, 12, UP);
+	addBridge(&game, 9, LEFT);
 
 	print(&game);
+
+	removeBridge(&game, 9, UP);
+	removeBridge(&game, 9, DOWN);
+	removeBridge(&game, 9, RIGHT);
+	removeBridge(&game, 12, UP);
+	removeBridge(&game, 9, LEFT);
+
+	print(&game);
+
 	clear(&game);
 
 	return 0;
