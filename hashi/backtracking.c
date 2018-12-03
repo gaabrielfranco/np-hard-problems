@@ -13,13 +13,15 @@
 typedef struct {
 	int line;
 	int column;
-	int value;
+	int value; // Original value
+	int current_value; // Value after a bridge is attached
 } Island;
 
 typedef struct {
 	int n, m, n_islands;
 	int** board;
 	Island* islands;
+	int (*neighbour_ids)[4]; // Each island has, at most, 4 neighbors
 } Game;
 
 typedef enum {
@@ -40,41 +42,89 @@ typedef enum {
 
 
 /*
+ * Finds each island neighbors for faster queries
+ */
+void findNeighbors(Game* g) {
+	int l, c;
+
+	for (int i = 0; i < g->n_islands; i++) {
+		// UP
+		l = g->islands[i].line;
+		c = g->islands[i].column;
+
+		while (g->board[--l][c] < 0 && g->board[l][c] != BORDER);
+
+		g->neighbour_ids[i][UP] = g->board[l][c];
+
+		// DOWN
+		l = g->islands[i].line;
+
+		while (g->board[++l][c] < 0 && g->board[l][c] != BORDER);
+
+		g->neighbour_ids[i][DOWN] = g->board[l][c];
+
+		// LEFT
+		l = g->islands[i].line;
+
+		while (g->board[l][--c] < 0 && g->board[l][c] != BORDER);
+
+		g->neighbour_ids[i][LEFT] = g->board[l][c];
+
+		// RIGHT
+		c = g->islands[i].column;
+
+		while (g->board[l][++c] < 0 && g->board[l][c] != BORDER);
+
+		g->neighbour_ids[i][RIGHT] = g->board[l][c];
+
+		printf("%3d: %3d %3d %3d %3d\n", i, g->neighbour_ids[i][UP],
+			g->neighbour_ids[i][DOWN], g->neighbour_ids[i][LEFT],
+			g->neighbour_ids[i][RIGHT]);
+	}
+}
+
+/*
  * Reads input file and creates the game
  */
 void create(Game* g) {
 	// Board's dimension and number of islands
 	scanf("%d %d %d", &g->n, &g->m, &g->n_islands);
 
+	// Board creation
 	g->board = (int**)malloc(3 * g->n * sizeof(int*));
 
 	for (int i = 0; i < 3 * g->n; i++) {
 		g->board[i] = (int*)malloc(3 * g->m * sizeof(int));
-		for (int j = 0; j < 3 * g->m; j++)
+
+		// Vertical borders
+		g->board[i][0] = g->board[i][3 * g->m - 1] = BORDER;
+
+		for (int j = 1; j < 3 * g->m - 1; j++)
 			g->board[i][j] = EMPTY;
 	}
 
-	g->islands = (Island*)malloc(g->n_islands * sizeof(Island));
-
-	// Border
-	for (int i = 0; i < 3 * g->n; i++)
-		g->board[i][0] = g->board[i][3 * g->m - 1] = BORDER;
-
+	// Horizontal borders
 	for (int i = 0; i < 3 * g->m; i++)
 		g->board[0][i] = g->board[3 * g->n - 1][i] = BORDER;
 
-	// Islands
+	// Islands creation
 	int x, y;
+
+	g->islands = (Island*)malloc(g->n_islands * sizeof(Island));
+	g->neighbour_ids = malloc(g->n_islands * sizeof(int[4]));
 
 	for (int i = 0; i < g->n_islands; i++) {
 		scanf("%d %d %d", &x, &y, &g->islands[i].value);
 
 		g->islands[i].line = 3 * (g->n - y - 1) + 1;
 		g->islands[i].column = 3 * x + 1;
+		g->islands[i].current_value = g->islands[i].value;
 
-		g->board[g->islands[i].line][g->islands[i].column] =
-			g->islands[i].value;
+		// Positive numbers in board are the corresponding island id
+		g->board[g->islands[i].line][g->islands[i].column] = i;
 	}
+
+	findNeighbors(g);
 }
 
 /*
@@ -101,7 +151,7 @@ void print(Game* g) {
 			else if (g->board[i][j] == BORDER)
 				printf("   ");
 			else
-				printf("(%d)", g->board[i][j]);
+				printf("(%d)", g->islands[g->board[i][j]].value);
 		}
 
 		puts("");
@@ -138,7 +188,7 @@ int addBridge(Game* g, int id, Direction dir) {
 		}
 
 		// If couldn't add bridge
-		if (g->board[i][g->islands[id].column] <= 0) {
+		if (g->board[i][g->islands[id].column] < 0) {
 			success = 0;
 
 			while (i < g->islands[id].line - 1)
@@ -162,7 +212,7 @@ int addBridge(Game* g, int id, Direction dir) {
 		}
 
 		// If couldn't add bridge
-		if (g->board[i][g->islands[id].column] <= 0) {
+		if (g->board[i][g->islands[id].column] < 0) {
 			success = 0;
 
 			while (i > g->islands[id].line + 1)
@@ -186,7 +236,7 @@ int addBridge(Game* g, int id, Direction dir) {
 		}
 
 		// If couldn't add bridge
-		if (g->board[g->islands[id].line][i] <= 0) {
+		if (g->board[g->islands[id].line][i] < 0) {
 			success = 0;
 
 			while (i < g->islands[id].column - 1)
@@ -210,7 +260,7 @@ int addBridge(Game* g, int id, Direction dir) {
 		}
 
 		// If couldn't add bridge
-		if (g->board[g->islands[id].line][i] <= 0) {
+		if (g->board[g->islands[id].line][i] < 0) {
 			success = 0;
 
 			while (i > g->islands[id].column + 1)
@@ -297,6 +347,8 @@ void clear(Game* g) {
 		free(g->board[i]);
 
 	free(g->board);
+	free(g->islands);
+	free(g->neighbour_ids);
 }
 
 
