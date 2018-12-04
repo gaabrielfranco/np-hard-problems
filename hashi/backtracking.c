@@ -140,6 +140,8 @@ void create(Game* g) {
 		g->board[g->islands[i].line][g->islands[i].column] = i;
 	}
 
+	g->n_bridges /= 2; // Bridges were count twice
+
 	findNeighbors(g);
 }
 
@@ -204,11 +206,6 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (g->board[--i][g->islands[id].column] == VERTICAL_BRIDGE)
 				g->board[i][g->islands[id].column] = DOUBLE_VERTICAL_BRIDGE;
 		}
-		else if (g->board[i - 1][g->islands[id].column] ==
-				DOUBLE_VERTICAL_BRIDGE) {
-			success = 0;
-			break;
-		}
 
 		// If couldn't add bridge
 		if (g->board[i][g->islands[id].column] < 0) {
@@ -238,11 +235,6 @@ int addBridge(Game* g, int id, Direction dir) {
 			// If there's one bridge
 			while (g->board[++i][g->islands[id].column] == VERTICAL_BRIDGE)
 				g->board[i][g->islands[id].column] = DOUBLE_VERTICAL_BRIDGE;
-		}
-		else if (g->board[i + 1][g->islands[id].column] ==
-				DOUBLE_VERTICAL_BRIDGE) {
-			success = 0;
-			break;
 		}
 
 		// If couldn't add bridge
@@ -274,11 +266,6 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (g->board[g->islands[id].line][--i] == HORIZONTAL_BRIDGE)
 				g->board[g->islands[id].line][i] = DOUBLE_HORIZONTAL_BRIDGE;
 		}
-		else if (g->board[g->islands[id].line][i - 1] ==
-				DOUBLE_HORIZONTAL_BRIDGE) {
-			success = 0;
-			break;
-		}
 
 		// If couldn't add bridge
 		if (g->board[g->islands[id].line][i] < 0) {
@@ -308,11 +295,6 @@ int addBridge(Game* g, int id, Direction dir) {
 			// If there's one bridge
 			while (g->board[g->islands[id].line][++i] == HORIZONTAL_BRIDGE)
 				g->board[g->islands[id].line][i] = DOUBLE_HORIZONTAL_BRIDGE;
-		}
-		else if (g->board[g->islands[id].line][i + 1] ==
-				DOUBLE_HORIZONTAL_BRIDGE) {
-			success = 0;
-			break;
 		}
 
 		// If couldn't add bridge
@@ -515,8 +497,6 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
 				g->islands[g->neighbour_ids[id][RIGHT]].current_value);
 	}
 
-printf("%d %d ", sum, g->islands[id].current_value);
-
 	if (sum >= g->islands[id].current_value)
 		return 1;
 	else
@@ -524,34 +504,34 @@ printf("%d %d ", sum, g->islands[id].current_value);
 }
 
 /*
- * Solves the game
+ * Solves the game. Returns 1 when done.
  */
-void play(Game* g, int id) {
-	if (numberOfBridgesCanBeSatisfied(g, id) == 0) {
-puts("DEU RUIM");
-		return;
-	}
+int play(Game* g, int id) {
+	if (numberOfBridgesCanBeSatisfied(g, id) == 0) // Impossible to continue
+		return 0;
+
+	if (g->n_bridges == g->n_placed_bridges) // All bridges are set
+		return 1;
 
 	int result;
 
 	int l = g->islands[id].line;
 	int c = g->islands[id].column;
 
-printf("%d ", id);
-
 	if (g->islands[id].current_value > 0 &&
 		g->neighbour_ids[id][UP] != BORDER &&
 		g->islands[g->neighbour_ids[id][UP]].current_value > 0 &&
 		g->board[l - 1][c] != DOUBLE_VERTICAL_BRIDGE) {
 		result = addBridge(g, id, UP);
-printf("UP %d", result);
 
 		if (result == 1) {
 			//if (isolated(g, id) == 0) {
 			{
 				// If edge didn't make a isolated component
 				print(g);
-				play(g, id);
+
+				if (play(g, id) == 1)
+					return 1;
 			}
 
 			removeBridge(g, id, UP);
@@ -563,14 +543,15 @@ printf("UP %d", result);
 		g->islands[g->neighbour_ids[id][DOWN]].current_value > 0 &&
 		g->board[l + 1][c] != DOUBLE_VERTICAL_BRIDGE) {
 		result = addBridge(g, id, DOWN);
-printf("DOWN %d", result);
 
 		if (result == 1) {
 			//if (isolated(g, id) == 0) {
 			{
 				// If edge didn't make a isolated component
 				print(g);
-				play(g, id);
+				
+				if (play(g, id) == 1)
+					return 1;
 			}
 
 			removeBridge(g, id, DOWN);
@@ -582,14 +563,15 @@ printf("DOWN %d", result);
 		g->islands[g->neighbour_ids[id][LEFT]].current_value > 0 &&
 		g->board[l][c - 1] != DOUBLE_HORIZONTAL_BRIDGE) {
 		result = addBridge(g, id, LEFT);
-printf("LEFT %d", result);
 
 		if (result == 1) {
 			//if (isolated(g, id) == 0) {
 			{
 				// If edge didn't make a isolated component
 				print(g);
-				play(g, id);
+
+				if (play(g, id) == 1)
+					return 1;
 			}
 
 			removeBridge(g, id, LEFT);
@@ -601,14 +583,15 @@ printf("LEFT %d", result);
 		g->islands[g->neighbour_ids[id][RIGHT]].current_value > 0 &&
 		g->board[l][c + 1] != DOUBLE_HORIZONTAL_BRIDGE) {
 		result = addBridge(g, id, RIGHT);
-printf("RIGHT %d", result);
 
 		if (result == 1) {
 			//if (isolated(g, id) == 0) {
 			{
 				// If edge didn't make a isolated component
 				print(g);
-				play(g, id);
+
+				if (play(g, id) == 1)
+					return 1;
 			}
 
 			removeBridge(g, id, RIGHT);
