@@ -43,6 +43,17 @@ typedef enum {
 
 
 /*
+ * Auxiliary functions
+ */
+inline int min(int a, int b) {
+	return a < b ? a : b;
+}
+
+inline int max(int a, int b) {
+	return a > b ? a : b;
+}
+
+/*
  * Finds each island neighbors for faster queries
  */
 void findNeighbors(Game* g) {
@@ -194,8 +205,10 @@ int addBridge(Game* g, int id, Direction dir) {
 				g->board[i][g->islands[id].column] = DOUBLE_VERTICAL_BRIDGE;
 		}
 		else if (g->board[i - 1][g->islands[id].column] ==
-				DOUBLE_VERTICAL_BRIDGE)
-			i -= 2; // Adjusting for bridge removal
+				DOUBLE_VERTICAL_BRIDGE) {
+			success = 0;
+			break;
+		}
 
 		// If couldn't add bridge
 		if (g->board[i][g->islands[id].column] < 0) {
@@ -227,8 +240,10 @@ int addBridge(Game* g, int id, Direction dir) {
 				g->board[i][g->islands[id].column] = DOUBLE_VERTICAL_BRIDGE;
 		}
 		else if (g->board[i + 1][g->islands[id].column] ==
-				DOUBLE_VERTICAL_BRIDGE)
-			i += 2; // Adjusting for bridge removal
+				DOUBLE_VERTICAL_BRIDGE) {
+			success = 0;
+			break;
+		}
 
 		// If couldn't add bridge
 		if (g->board[i][g->islands[id].column] < 0) {
@@ -260,8 +275,10 @@ int addBridge(Game* g, int id, Direction dir) {
 				g->board[g->islands[id].line][i] = DOUBLE_HORIZONTAL_BRIDGE;
 		}
 		else if (g->board[g->islands[id].line][i - 1] ==
-				DOUBLE_HORIZONTAL_BRIDGE)
-			i -= 2; // Adjusting for bridge removal
+				DOUBLE_HORIZONTAL_BRIDGE) {
+			success = 0;
+			break;
+		}
 
 		// If couldn't add bridge
 		if (g->board[g->islands[id].line][i] < 0) {
@@ -293,8 +310,10 @@ int addBridge(Game* g, int id, Direction dir) {
 				g->board[g->islands[id].line][i] = DOUBLE_HORIZONTAL_BRIDGE;
 		}
 		else if (g->board[g->islands[id].line][i + 1] ==
-				DOUBLE_HORIZONTAL_BRIDGE)
-			i += 2; // Adjusting for bridge removal
+				DOUBLE_HORIZONTAL_BRIDGE) {
+			success = 0;
+			break;
+		}
 
 		// If couldn't add bridge
 		if (g->board[g->islands[id].line][i] < 0) {
@@ -402,13 +421,25 @@ int isolatedProcedure(Game* g, int id) {
 
 	g->visitado[id] = 1;
 
-	if (g->islands[id].current_value > 0) // Not isolated
-		return 0;
+	int possible = 0;
+
+	if (g->islands[id].current_value > 0) {
+		for (int i = 0; i < 4; i++) {
+			if (g->neighbour_ids[id][i] != BORDER &&
+				g->islands[g->neighbour_ids[id][i]].current_value > 0) {
+				possible = 1;
+				break;
+			}
+		}
+
+		if (possible == 1) // Not isolated
+			return 0;
+	}
 
 	for (int i = 0; i < 4; i++)
-		if (g->neighbour_ids[id][i] != BORDER)
-			if (isolatedProcedure(g, g->neighbour_ids[id][i]) == 0)
-				return 0;
+		if (g->neighbour_ids[id][i] != BORDER &&
+			isolatedProcedure(g, g->neighbour_ids[id][i]) == 0)
+			return 0;
 
 	return 1;
 }
@@ -422,154 +453,170 @@ int isolated(Game* g, int id) {
 		g->visitado[i] = 0;
 
 	if (isolatedProcedure(g, id) == 1) {
-		for (int i = 0; i < g->n_islands; i++)
+		for (int i = 0; i < g->n_islands; i++) {
+printf("%d ", g->visitado[i]);
 			if (g->visitado[i] == 0)
 				return 1;
+		}
+puts("");
 	}
 
 	return 0;
 }
 
 /*
+ * Checks if island needs more bridges and there are neighbors which
+ * can have more bridges attached.
+ * Returns 1 if possible, 0 otherwise.
+ */
+int numberOfBridgesCanBeSatisfied(Game* g, int id) {
+	int l = g->islands[id].line;
+	int c = g->islands[id].column;
+
+	int sum = 0;
+
+	// UP
+	if (g->neighbour_ids[id][UP] != BORDER) {
+		if (g->board[l - 1][c] == EMPTY)
+			sum += min(2,
+				g->islands[g->neighbour_ids[id][UP]].current_value);
+		else if (g->board[l - 1][c] == VERTICAL_BRIDGE)
+			sum += min(1,
+				g->islands[g->neighbour_ids[id][UP]].current_value);
+	}
+
+	// DOWN
+	if (g->neighbour_ids[id][DOWN] != BORDER) {
+		if (g->board[l + 1][c] == EMPTY)
+			sum += min(2,
+				g->islands[g->neighbour_ids[id][DOWN]].current_value);
+		else if (g->board[l + 1][c] == VERTICAL_BRIDGE)
+			sum += min(1,
+				g->islands[g->neighbour_ids[id][DOWN]].current_value);
+	}
+
+	// LEFT
+	if (g->neighbour_ids[id][LEFT] != BORDER) {
+		if (g->board[l][c - 1] == EMPTY)
+			sum += min(2,
+				g->islands[g->neighbour_ids[id][LEFT]].current_value);
+		else if (g->board[l][c - 1] == HORIZONTAL_BRIDGE)
+			sum += min(1,
+				g->islands[g->neighbour_ids[id][LEFT]].current_value);
+	}
+
+	// RIGHT
+	if (g->neighbour_ids[id][RIGHT] != BORDER) {
+		if (g->board[l][c + 1] == EMPTY)
+			sum += min(2,
+				g->islands[g->neighbour_ids[id][RIGHT]].current_value);
+		else if (g->board[l][c + 1] == HORIZONTAL_BRIDGE)
+			sum += min(1,
+				g->islands[g->neighbour_ids[id][RIGHT]].current_value);
+	}
+
+printf("%d %d ", sum, g->islands[id].current_value);
+
+	if (sum >= g->islands[id].current_value)
+		return 1;
+	else
+		return 0;
+}
+
+/*
  * Solves the game
  */
 void play(Game* g, int id) {
+	if (numberOfBridgesCanBeSatisfied(g, id) == 0) {
+puts("DEU RUIM");
+		return;
+	}
+
 	int result;
+
+	int l = g->islands[id].line;
+	int c = g->islands[id].column;
+
+printf("%d ", id);
 
 	if (g->islands[id].current_value > 0 &&
 		g->neighbour_ids[id][UP] != BORDER &&
-		g->islands[g->neighbour_ids[id][UP]].current_value > 0) {
+		g->islands[g->neighbour_ids[id][UP]].current_value > 0 &&
+		g->board[l - 1][c] != DOUBLE_VERTICAL_BRIDGE) {
 		result = addBridge(g, id, UP);
+printf("UP %d", result);
 
 		if (result == 1) {
-			print(g);
-			play(g, id);
+			//if (isolated(g, id) == 0) {
+			{
+				// If edge didn't make a isolated component
+				print(g);
+				play(g, id);
+			}
+
 			removeBridge(g, id, UP);
 		}
 	}
 
 	if (g->islands[id].current_value > 0 &&
 		g->neighbour_ids[id][DOWN] != BORDER &&
-		g->islands[g->neighbour_ids[id][DOWN]].current_value > 0) {
+		g->islands[g->neighbour_ids[id][DOWN]].current_value > 0 &&
+		g->board[l + 1][c] != DOUBLE_VERTICAL_BRIDGE) {
 		result = addBridge(g, id, DOWN);
+printf("DOWN %d", result);
 
 		if (result == 1) {
-			print(g);
-			play(g, id);
+			//if (isolated(g, id) == 0) {
+			{
+				// If edge didn't make a isolated component
+				print(g);
+				play(g, id);
+			}
+
 			removeBridge(g, id, DOWN);
 		}
 	}
 
 	if (g->islands[id].current_value > 0 &&
 		g->neighbour_ids[id][LEFT] != BORDER &&
-		g->islands[g->neighbour_ids[id][LEFT]].current_value > 0) {
+		g->islands[g->neighbour_ids[id][LEFT]].current_value > 0 &&
+		g->board[l][c - 1] != DOUBLE_HORIZONTAL_BRIDGE) {
 		result = addBridge(g, id, LEFT);
+printf("LEFT %d", result);
 
 		if (result == 1) {
-			print(g);
-			play(g, id);
+			//if (isolated(g, id) == 0) {
+			{
+				// If edge didn't make a isolated component
+				print(g);
+				play(g, id);
+			}
+
 			removeBridge(g, id, LEFT);
 		}
 	}
 
 	if (g->islands[id].current_value > 0 &&
 		g->neighbour_ids[id][RIGHT] != BORDER &&
-		g->islands[g->neighbour_ids[id][RIGHT]].current_value > 0) {
+		g->islands[g->neighbour_ids[id][RIGHT]].current_value > 0 &&
+		g->board[l][c + 1] != DOUBLE_HORIZONTAL_BRIDGE) {
 		result = addBridge(g, id, RIGHT);
+printf("RIGHT %d", result);
 
 		if (result == 1) {
-			print(g);
-			play(g, id);
+			//if (isolated(g, id) == 0) {
+			{
+				// If edge didn't make a isolated component
+				print(g);
+				play(g, id);
+			}
+
 			removeBridge(g, id, RIGHT);
 		}
 	}
 
 	if (id < g->n_islands - 1)
 		play(g, id + 1);
-/*
-	if (g->islands[id].current_value > 0 &&
-		g->islands[g->neighbour_ids[id][UP]].current_value > 0) {
-		result = addBridge(g, id, UP);
-
-		if (result == 1 && isolated(g, id) == 1)
-			removeBridge(g, id, UP);
-		else {
-			print(g);
-			printf("%d %s\n", id, result ? "UP S" : "UP N");
-
-			if (result == 1) {
-				if (g->islands[id].current_value > 0)
-					play(g, id);
-				else if (id < g->n_islands - 1)
-					play(g, id + 1);
-
-				removeBridge(g, id, UP);
-			}
-		}
-	}
-
-	if (g->islands[id].current_value > 0 &&
-		g->islands[g->neighbour_ids[id][DOWN]].current_value > 0) {
-		result = addBridge(g, id, DOWN);
-
-		if (result == 1 && isolated(g, id) == 1)
-			removeBridge(g, id, DOWN);
-		else {
-			print(g);
-			printf("%d %s\n", id, result ? "DOWN S" : "DOWN N");
-
-			if (result == 1) {
-				if (g->islands[id].current_value > 0)
-					play(g, id);
-				else if (id < g->n_islands - 1)
-					play(g, id + 1);
-
-				removeBridge(g, id, DOWN);
-			}
-		}
-	}
-
-	if (g->islands[id].current_value > 0 &&
-		g->islands[g->neighbour_ids[id][LEFT]].current_value > 0) {
-		result = addBridge(g, id, LEFT);
-
-		if (result == 1 && isolated(g, id) == 1)
-			removeBridge(g, id, LEFT);
-		else {
-			print(g);
-			printf("%d %s\n", id, result ? "LEFT S" : "LEFT N");
-
-			if (result == 1) {
-				if (g->islands[id].current_value > 0)
-					play(g, id);
-				else if (id < g->n_islands - 1)
-					play(g, id + 1);
-
-				removeBridge(g, id, LEFT);
-			}
-		}
-	}
-
-	if (g->islands[id].current_value > 0 &&
-		g->islands[g->neighbour_ids[id][RIGHT]].current_value > 0) {
-		result = addBridge(g, id, RIGHT);
-
-		if (result == 1 && isolated(g, id) == 1)
-			removeBridge(g, id, RIGHT);
-		else {
-			print(g);
-			printf("%d %s\n", id, result ? "RIGHT S" : "RIGHT N");
-
-			if (result == 1) {
-				if (g->islands[id].current_value > 0)
-					play(g, id);
-				else if (id < g->n_islands - 1)
-					play(g, id + 1);
-
-				removeBridge(g, id, RIGHT);
-			}
-		}
-	}*/
 }
 
 /*
