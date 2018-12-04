@@ -3,6 +3,9 @@
 #include <iostream>
 #include <set>
 #include <vector>
+#include <chrono>
+
+typedef std::chrono::high_resolution_clock Clock;
 
 size_t calc_cost(size_t* costs, size_t m, std::vector<size_t> subset)
 {
@@ -112,8 +115,16 @@ int main()
     }
 
     std::cout << "\nUsing Brute Force\n";
+    auto start = Clock::now();
     gen_subsets(G, n, m, costs);
+    auto end = Clock::now();
+    std::cout << "Brute Force duration: ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
+                        end - start)
+                        .count();
+    std::cout << "ms\n";
 
+    start = Clock::now();
     // Greedy solution
     for (size_t i = 0; i < n; i++)
     {
@@ -170,5 +181,12 @@ int main()
     }
     std::cout << "} with cost = ";
     std::cout << min_cost << std::endl;
+
+    end = Clock::now();
+    std::cout << "Greedy duration: ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
+                        end - start)
+                        .count();
+    std::cout << "ms\n";
     return 0;
 }
