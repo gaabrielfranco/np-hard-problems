@@ -18,10 +18,11 @@ typedef struct {
 } Island;
 
 typedef struct {
-	int n, m, n_islands;
+	int n, m, n_islands, n_bridges, n_placed_bridges;
 	int** board;
 	Island* islands;
 	int (*neighbour_ids)[4]; // Each island has, at most, 4 neighbors
+	int* visitado; // Auxiliary
 } Game;
 
 typedef enum {
@@ -112,6 +113,9 @@ void create(Game* g) {
 
 	g->islands = (Island*)malloc(g->n_islands * sizeof(Island));
 	g->neighbour_ids = malloc(g->n_islands * sizeof(int[4]));
+	g->visitado = (int*)malloc(g->n_islands * sizeof(int));
+
+	g->n_bridges = g->n_placed_bridges = 0;
 
 	for (int i = 0; i < g->n_islands; i++) {
 		scanf("%d %d %d", &x, &y, &g->islands[i].value);
@@ -119,6 +123,7 @@ void create(Game* g) {
 		g->islands[i].line = 3 * (g->n - y - 1) + 1;
 		g->islands[i].column = 3 * x + 1;
 		g->islands[i].current_value = g->islands[i].value;
+		g->n_bridges += g->islands[i].value;
 
 		// Positive numbers in board are the corresponding island id
 		g->board[g->islands[i].line][g->islands[i].column] = i;
@@ -171,11 +176,12 @@ void print(Game* g) {
  * can`t have more bridges.
  */
 int addBridge(Game* g, int id, Direction dir) {
-	int success = 1, i;
+	int success = 1, i, previous;
 
 	switch (dir) {
 	case UP:
 		i = g->islands[id].line;
+		previous = g->board[i - 1][g->islands[id].column];
 
 		if (g->board[i - 1][g->islands[id].column] == EMPTY) {
 			// If there's no bridge
@@ -187,13 +193,16 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (g->board[--i][g->islands[id].column] == VERTICAL_BRIDGE)
 				g->board[i][g->islands[id].column] = DOUBLE_VERTICAL_BRIDGE;
 		}
+		else if (g->board[i - 1][g->islands[id].column] ==
+				DOUBLE_VERTICAL_BRIDGE)
+			i -= 2; // Adjusting for bridge removal
 
 		// If couldn't add bridge
 		if (g->board[i][g->islands[id].column] < 0) {
 			success = 0;
 
 			while (i < g->islands[id].line - 1)
-				g->board[++i][g->islands[id].column] = -1;
+				g->board[++i][g->islands[id].column] = previous;
 		}
 		else {
 			// Updates the islands bridge counter
@@ -205,6 +214,7 @@ int addBridge(Game* g, int id, Direction dir) {
 
 	case DOWN:
 		i = g->islands[id].line;
+		previous = g->board[i + 1][g->islands[id].column];
 
 		if (g->board[i + 1][g->islands[id].column] == EMPTY) {
 			// If there's no bridge
@@ -216,13 +226,16 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (g->board[++i][g->islands[id].column] == VERTICAL_BRIDGE)
 				g->board[i][g->islands[id].column] = DOUBLE_VERTICAL_BRIDGE;
 		}
+		else if (g->board[i + 1][g->islands[id].column] ==
+				DOUBLE_VERTICAL_BRIDGE)
+			i += 2; // Adjusting for bridge removal
 
 		// If couldn't add bridge
 		if (g->board[i][g->islands[id].column] < 0) {
 			success = 0;
 
 			while (i > g->islands[id].line + 1)
-				g->board[--i][g->islands[id].column] = -1;
+				g->board[--i][g->islands[id].column] = previous;
 		}
 		else {
 			// Updates the islands bridge counter
@@ -234,6 +247,7 @@ int addBridge(Game* g, int id, Direction dir) {
 
 	case LEFT:
 		i = g->islands[id].column;
+		previous = g->board[g->islands[id].line][i - 1];
 
 		if (g->board[g->islands[id].line][i - 1] == EMPTY) {
 			// If there's no bridge
@@ -245,13 +259,16 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (g->board[g->islands[id].line][--i] == HORIZONTAL_BRIDGE)
 				g->board[g->islands[id].line][i] = DOUBLE_HORIZONTAL_BRIDGE;
 		}
+		else if (g->board[g->islands[id].line][i - 1] ==
+				DOUBLE_HORIZONTAL_BRIDGE)
+			i -= 2; // Adjusting for bridge removal
 
 		// If couldn't add bridge
 		if (g->board[g->islands[id].line][i] < 0) {
 			success = 0;
 
 			while (i < g->islands[id].column - 1)
-				g->board[g->islands[id].line][++i] = -1;
+				g->board[g->islands[id].line][++i] = previous;
 		}
 		else {
 			// Updates the islands bridge counter
@@ -263,6 +280,7 @@ int addBridge(Game* g, int id, Direction dir) {
 
 	case RIGHT:
 		i = g->islands[id].column;
+		previous = g->board[g->islands[id].line][i + 1];
 
 		if (g->board[g->islands[id].line][i + 1] == EMPTY) {
 			// If there's no bridge
@@ -274,13 +292,16 @@ int addBridge(Game* g, int id, Direction dir) {
 			while (g->board[g->islands[id].line][++i] == HORIZONTAL_BRIDGE)
 				g->board[g->islands[id].line][i] = DOUBLE_HORIZONTAL_BRIDGE;
 		}
+		else if (g->board[g->islands[id].line][i + 1] ==
+				DOUBLE_HORIZONTAL_BRIDGE)
+			i += 2; // Adjusting for bridge removal
 
 		// If couldn't add bridge
 		if (g->board[g->islands[id].line][i] < 0) {
 			success = 0;
 
 			while (i > g->islands[id].column + 1)
-				g->board[g->islands[id].line][--i] = -1;
+				g->board[g->islands[id].line][--i] = previous;
 		}
 		else {
 			// Updates the islands bridge counter
@@ -288,6 +309,9 @@ int addBridge(Game* g, int id, Direction dir) {
 			g->islands[g->board[g->islands[id].line][i]].current_value--;
 		}
 	}
+
+	if (success)
+		g->n_placed_bridges++;
 
 	return success;
 }
@@ -306,45 +330,104 @@ void removeBridge(Game* g, int id, Direction dir) {
 	case UP:
 		i = g->islands[id].line;
 
-		while (g->board[--i][g->islands[id].column] == VERTICAL_BRIDGE)
-			g->board[i][g->islands[id].column] = EMPTY;
+		if (g->board[i - 1][g->islands[id].column] == VERTICAL_BRIDGE)
+			while (g->board[--i][g->islands[id].column] == VERTICAL_BRIDGE)
+				g->board[i][g->islands[id].column] = EMPTY;
+		else
+			while (g->board[--i][g->islands[id].column] ==
+					DOUBLE_VERTICAL_BRIDGE)
+				g->board[i][g->islands[id].column] = VERTICAL_BRIDGE;
 
 		// This island can support a new bridge now
-		g->islands[g->board[i][g->islands[id].column]].current_value++;
+		g->islands[g->neighbour_ids[id][UP]].current_value++;
 
 		break;
 
 	case DOWN:
 		i = g->islands[id].line;
 
-		while (g->board[++i][g->islands[id].column] == VERTICAL_BRIDGE)
-			g->board[i][g->islands[id].column] = EMPTY;
+		if (g->board[i + 1][g->islands[id].column] == VERTICAL_BRIDGE)
+			while (g->board[++i][g->islands[id].column] == VERTICAL_BRIDGE)
+				g->board[i][g->islands[id].column] = EMPTY;
+		else
+			while (g->board[++i][g->islands[id].column] ==
+					DOUBLE_VERTICAL_BRIDGE)
+				g->board[i][g->islands[id].column] = VERTICAL_BRIDGE;
 
 		// This island can support a new bridge now
-		g->islands[g->board[i][g->islands[id].column]].current_value++;
+		g->islands[g->neighbour_ids[id][DOWN]].current_value++;
 
 		break;
 
 	case LEFT:
 		i = g->islands[id].column;
 
-		while (g->board[g->islands[id].line][--i] == HORIZONTAL_BRIDGE)
-			g->board[g->islands[id].line][i] = EMPTY;
+		if (g->board[g->islands[id].line][i - 1] == HORIZONTAL_BRIDGE)
+			while (g->board[g->islands[id].line][--i] == HORIZONTAL_BRIDGE)
+				g->board[g->islands[id].line][i] = EMPTY;
+		else
+			while (g->board[g->islands[id].line][--i] ==
+					DOUBLE_HORIZONTAL_BRIDGE)
+				g->board[g->islands[id].line][i] = HORIZONTAL_BRIDGE;
 
 		// This island can support a new bridge now
-		g->islands[g->board[i][g->islands[id].column]].current_value++;
+		g->islands[g->neighbour_ids[id][LEFT]].current_value++;
 
 		break;
 
 	case RIGHT:
 		i = g->islands[id].column;
 
-		while (g->board[g->islands[id].line][++i] == HORIZONTAL_BRIDGE)
-			g->board[g->islands[id].line][i] = EMPTY;
+		if (g->board[g->islands[id].line][i + 1] == HORIZONTAL_BRIDGE)
+			while (g->board[g->islands[id].line][++i] == HORIZONTAL_BRIDGE)
+				g->board[g->islands[id].line][i] = EMPTY;
+		else
+			while (g->board[g->islands[id].line][++i] ==
+					DOUBLE_HORIZONTAL_BRIDGE)
+				g->board[g->islands[id].line][i] = HORIZONTAL_BRIDGE;
 
 		// This island can support a new bridge now
-		g->islands[g->board[i][g->islands[id].column]].current_value++;
+		g->islands[g->neighbour_ids[id][RIGHT]].current_value++;
 	}
+
+	g->n_placed_bridges--;
+}
+
+/*
+ * Procedure of 'checkIfIsolated' function
+ */
+int isolatedProcedure(Game* g, int id) {
+	if (g->visitado[id] == 1)
+		return 1;
+
+	g->visitado[id] = 1;
+
+	if (g->islands[id].current_value > 0) // Not isolated
+		return 0;
+
+	for (int i = 0; i < 4; i++)
+		if (g->neighbour_ids[id][i] != BORDER)
+			if (isolatedProcedure(g, g->neighbour_ids[id][i]) == 0)
+				return 0;
+
+	return 1;
+}
+
+/*
+ * Checks if the subgraph with g->islands[id] forms an isolated component
+ * Returns 1 if true, 0 otherwise.
+ */
+int isolated(Game* g, int id) {
+	for (int i = 0; i < g->n_islands; i++)
+		g->visitado[i] = 0;
+
+	if (isolatedProcedure(g, id) == 1) {
+		for (int i = 0; i < g->n_islands; i++)
+			if (g->visitado[i] == 0)
+				return 1;
+	}
+
+	return 0;
 }
 
 /*
@@ -354,35 +437,139 @@ void play(Game* g, int id) {
 	int result;
 
 	if (g->islands[id].current_value > 0 &&
+		g->neighbour_ids[id][UP] != BORDER &&
 		g->islands[g->neighbour_ids[id][UP]].current_value > 0) {
 		result = addBridge(g, id, UP);
-		print(g);
-		printf("%d %s\n", id, result ? "UP S" : "UP N");
+
+		if (result == 1) {
+			print(g);
+			play(g, id);
+			removeBridge(g, id, UP);
+		}
+	}
+
+	if (g->islands[id].current_value > 0 &&
+		g->neighbour_ids[id][DOWN] != BORDER &&
+		g->islands[g->neighbour_ids[id][DOWN]].current_value > 0) {
+		result = addBridge(g, id, DOWN);
+
+		if (result == 1) {
+			print(g);
+			play(g, id);
+			removeBridge(g, id, DOWN);
+		}
+	}
+
+	if (g->islands[id].current_value > 0 &&
+		g->neighbour_ids[id][LEFT] != BORDER &&
+		g->islands[g->neighbour_ids[id][LEFT]].current_value > 0) {
+		result = addBridge(g, id, LEFT);
+
+		if (result == 1) {
+			print(g);
+			play(g, id);
+			removeBridge(g, id, LEFT);
+		}
+	}
+
+	if (g->islands[id].current_value > 0 &&
+		g->neighbour_ids[id][RIGHT] != BORDER &&
+		g->islands[g->neighbour_ids[id][RIGHT]].current_value > 0) {
+		result = addBridge(g, id, RIGHT);
+
+		if (result == 1) {
+			print(g);
+			play(g, id);
+			removeBridge(g, id, RIGHT);
+		}
+	}
+
+	if (id < g->n_islands - 1)
+		play(g, id + 1);
+/*
+	if (g->islands[id].current_value > 0 &&
+		g->islands[g->neighbour_ids[id][UP]].current_value > 0) {
+		result = addBridge(g, id, UP);
+
+		if (result == 1 && isolated(g, id) == 1)
+			removeBridge(g, id, UP);
+		else {
+			print(g);
+			printf("%d %s\n", id, result ? "UP S" : "UP N");
+
+			if (result == 1) {
+				if (g->islands[id].current_value > 0)
+					play(g, id);
+				else if (id < g->n_islands - 1)
+					play(g, id + 1);
+
+				removeBridge(g, id, UP);
+			}
+		}
 	}
 
 	if (g->islands[id].current_value > 0 &&
 		g->islands[g->neighbour_ids[id][DOWN]].current_value > 0) {
 		result = addBridge(g, id, DOWN);
-		print(g);
-		printf("%d %s\n", id, result ? "DOWN S" : "DOWN N");
+
+		if (result == 1 && isolated(g, id) == 1)
+			removeBridge(g, id, DOWN);
+		else {
+			print(g);
+			printf("%d %s\n", id, result ? "DOWN S" : "DOWN N");
+
+			if (result == 1) {
+				if (g->islands[id].current_value > 0)
+					play(g, id);
+				else if (id < g->n_islands - 1)
+					play(g, id + 1);
+
+				removeBridge(g, id, DOWN);
+			}
+		}
 	}
 
 	if (g->islands[id].current_value > 0 &&
 		g->islands[g->neighbour_ids[id][LEFT]].current_value > 0) {
 		result = addBridge(g, id, LEFT);
-		print(g);
-		printf("%d %s\n", id, result ? "LEFT S" : "LEFT N");
+
+		if (result == 1 && isolated(g, id) == 1)
+			removeBridge(g, id, LEFT);
+		else {
+			print(g);
+			printf("%d %s\n", id, result ? "LEFT S" : "LEFT N");
+
+			if (result == 1) {
+				if (g->islands[id].current_value > 0)
+					play(g, id);
+				else if (id < g->n_islands - 1)
+					play(g, id + 1);
+
+				removeBridge(g, id, LEFT);
+			}
+		}
 	}
 
 	if (g->islands[id].current_value > 0 &&
 		g->islands[g->neighbour_ids[id][RIGHT]].current_value > 0) {
 		result = addBridge(g, id, RIGHT);
-		print(g);
-		printf("%d %s\n", id, result ? "RIGHT S" : "RIGHT N");
-	}
 
-	if (id < g->n_islands - 1)
-		play(g, id + 1);
+		if (result == 1 && isolated(g, id) == 1)
+			removeBridge(g, id, RIGHT);
+		else {
+			print(g);
+			printf("%d %s\n", id, result ? "RIGHT S" : "RIGHT N");
+
+			if (result == 1) {
+				if (g->islands[id].current_value > 0)
+					play(g, id);
+				else if (id < g->n_islands - 1)
+					play(g, id + 1);
+
+				removeBridge(g, id, RIGHT);
+			}
+		}
+	}*/
 }
 
 /*
@@ -395,6 +582,7 @@ void clear(Game* g) {
 	free(g->board);
 	free(g->islands);
 	free(g->neighbour_ids);
+	free(g->visitado);
 }
 
 
