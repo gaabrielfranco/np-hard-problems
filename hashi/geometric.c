@@ -55,7 +55,7 @@ void findNeighbours(Game* g) {
 			g->islands[i].bridges[j] = NULL;
 
 #ifndef NDEBUG
-	puts("\nFinding neighbours...");
+	puts("Finding neighbours...");
 	fflush(stdout);
 #endif	// NDEBUG
 
@@ -279,6 +279,122 @@ void create(Game* g) {
 }
 
 /*
+ * Prints the solution
+ */
+void print(Game* g) {
+	puts("");
+
+	int** board = (int**)malloc(3 * g->n * sizeof(int*));
+
+	for (int i = 0; i < 3 * g->n; i++) {
+		board[i] = (int*)malloc(3 * g->m * sizeof(int));
+
+		for (int j = 0; j < 3 * g->m; j++)
+			board[i][j] = -1;
+	}
+
+	for (int i = 0; i < g->n_islands; i++)
+		board[3 * g->islands[i].line + 1][3 * g->islands[i].column + 1]
+			= g->islands[i].current_value;
+/*
+g->n_placed_bridges = 16;
+g->placed_bridges[0] = 1;
+g->placed_bridges[1] = 3;
+g->placed_bridges[2] = 8;
+g->placed_bridges[3] = 14;
+g->placed_bridges[4] = 19;
+g->placed_bridges[5] = 21;
+g->placed_bridges[6] = 24;
+g->placed_bridges[7] = 25;
+
+g->placed_bridges[8] = 9;
+g->placed_bridges[9] = 7;
+g->placed_bridges[10] = 13;
+g->placed_bridges[11] = 18;
+g->placed_bridges[12] = 26;
+g->placed_bridges[13] = 23;
+g->placed_bridges[14] = 27;
+g->placed_bridges[15] = 26;
+*/
+	int l, c;
+
+	for (int i = 0; i < g->n_placed_bridges; i++) {
+		l = 3 * g->bridges[g->placed_bridges[i]].island_a->line + 1;
+		c = 3 * g->bridges[g->placed_bridges[i]].island_a->column + 1;
+
+		if (g->bridges[g->placed_bridges[i]].island_a->column ==
+			g->bridges[g->placed_bridges[i]].island_b->column) {
+			if (g->bridges[g->placed_bridges[i]].island_a->line >
+				g->bridges[g->placed_bridges[i]].island_b->line)
+				while (board[--l][c] < 0)
+					board[l][c]--;
+			else
+				while (board[++l][c] < 0)
+					board[l][c]--;
+		}
+		else {
+			if (g->bridges[g->placed_bridges[i]].island_a->column >
+				g->bridges[g->placed_bridges[i]].island_b->column)
+				while (board[l][--c] < 0)
+					board[l][c]--;
+			else
+				while (board[l][++c] < 0)
+					board[l][c]--;
+		}
+	}
+
+	for (int i = 0; i < g->m; i++)
+		printf("---------");
+	puts("");
+
+	for (int i = 0; i < 3 * g->n; i++) {
+		for (int j = 0; j < 3 * g->m; j++) {
+			if (board[i][j] == -1)
+				printf("   ");
+			else if (board[i][j] == -2)
+				printf(" * ");
+			else if (board[i][j] == -3)
+				printf(" D ");
+			else
+				printf("(%d)", g->islands[board[i][j]].current_value);
+		}
+
+		puts("");
+	}
+
+	for (int i = 0; i < g->m; i++)
+		printf("---------");
+
+	puts("\n");
+
+	for (int i = 0; i < 3 * g->n; i++)
+		free(board[i]);
+	free(board);
+}
+
+/*
+ * Adds all obvious bridges to the board.
+ * Fon instance, is an island needs 8 bridges, it must have 2 bridges
+ * in all four directions.
+ */
+void addObviousBridges(Game* g) {
+}
+
+/*
+ * Solves the game.
+ */
+void play(Game* g) {
+	addObviousBridges(g);
+	print(g);
+
+#ifndef NDEBUG
+	puts("\nObvious bridges added\n");
+#endif	// NDEBUG
+
+	//backtracking(g, 0);
+}
+
+/*
  * Frees memory
  */
 void clear(Game* g) {
@@ -317,6 +433,7 @@ int main() {
 	Game game;
 
 	create(&game);
+	play(&game);
 	clear(&game);
 
 #ifndef NDEBUG
