@@ -201,7 +201,7 @@ void findNeighbours(Game* g) {
 /*
  * Checks if two bridges intersect.
  */
-inline int intersect(Bridge* a, Bridge* b) {
+inline int doIntersect(Bridge* a, Bridge* b) {
 	int vec_a_l = a->island_a->line - a->island_b->line;
 	int vec_a_c = a->island_a->column - a->island_b->column;
 
@@ -231,7 +231,7 @@ void calcIntersections(Game* g) {
 
 	for (int i = 0; i < g->n_bridges; i++) {
 		for (int j = i + 1; j < g->n_bridges; j++) {
-			if (intersect(g->bridges + i, g->bridges + j) == 1) {
+			if (doIntersect(g->bridges + i, g->bridges + j) == 1) {
 				g->crosses[i][g->n_crosses[i]++] = j;
 				g->crosses[j][g->n_crosses[j]++] = i;
 
@@ -292,30 +292,17 @@ void print(Game* g) {
 		for (int j = 0; j < 3 * g->m; j++)
 			board[i][j] = -1;
 	}
+/*
+	for (int i = 0; i < 3 * g->n; i++)
+		board[i][0] = board[i][3 * g->m - 1] = 9;
 
+	for (int i = 0; i < 3 * g->m; i++)
+		board[0][i] = board[3 * g->n - 1][i] = 9;
+*/
 	for (int i = 0; i < g->n_islands; i++)
 		board[3 * g->islands[i].line + 1][3 * g->islands[i].column + 1]
 			= g->islands[i].current_value;
-/*
-g->n_placed_bridges = 16;
-g->placed_bridges[0] = 1;
-g->placed_bridges[1] = 3;
-g->placed_bridges[2] = 8;
-g->placed_bridges[3] = 14;
-g->placed_bridges[4] = 19;
-g->placed_bridges[5] = 21;
-g->placed_bridges[6] = 24;
-g->placed_bridges[7] = 25;
 
-g->placed_bridges[8] = 9;
-g->placed_bridges[9] = 7;
-g->placed_bridges[10] = 13;
-g->placed_bridges[11] = 18;
-g->placed_bridges[12] = 26;
-g->placed_bridges[13] = 23;
-g->placed_bridges[14] = 27;
-g->placed_bridges[15] = 26;
-*/
 	int l, c;
 
 	for (int i = 0; i < g->n_placed_bridges; i++) {
@@ -336,10 +323,10 @@ g->placed_bridges[15] = 26;
 			if (g->bridges[g->placed_bridges[i]].island_a->column >
 				g->bridges[g->placed_bridges[i]].island_b->column)
 				while (board[l][--c] < 0)
-					board[l][c]--;
+					board[l][c] -= 3;
 			else
 				while (board[l][++c] < 0)
-					board[l][c]--;
+					board[l][c] -= 3;
 		}
 	}
 
@@ -349,14 +336,18 @@ g->placed_bridges[15] = 26;
 
 	for (int i = 0; i < 3 * g->n; i++) {
 		for (int j = 0; j < 3 * g->m; j++) {
-			if (board[i][j] == -1)
+			if (board[i][j] == 9 || board[i][j] == -1)
 				printf("   ");
 			else if (board[i][j] == -2)
-				printf(" * ");
+				printf(" | ");
 			else if (board[i][j] == -3)
 				printf(" D ");
+			else if (board[i][j] == -4)
+				printf("---");
+			else if (board[i][j] == -7)
+				printf("DDD");
 			else
-				printf("(%d)", g->islands[board[i][j]].current_value);
+				printf("(%d)", board[i][j]);
 		}
 
 		puts("");
@@ -378,12 +369,164 @@ g->placed_bridges[15] = 26;
  * in all four directions.
  */
 void addObviousBridges(Game* g) {
+	// Number of islands which had no bridge addition per iteration
+	int not_modified;
+
+	//do {
+		not_modified = 0;
+
+		for (int i = 0; i < g->n_islands; i++) {
+			switch (g->islands[i].current_value) {
+				case 1:
+					break;
+
+				case 2:
+					break;
+
+				case 3:
+					break;
+
+				case 4:
+					break;
+
+				case 5:
+					if (!g->islands[i].bridges[0]) {
+						for (int j = 1; j < 4; j++) {
+							g->placed_bridges[g->n_placed_bridges++] =
+								g->islands[i].bridges[j]->id;
+
+							g->islands[i].bridges[j]->island_a->current_value--;
+							g->islands[i].bridges[j]->island_b->current_value--;
+						}
+					}
+					else if (!g->islands[i].bridges[1]) {
+						for (int j = 0; j < 4; j++) {
+							if (j != 1) {
+								g->placed_bridges[g->n_placed_bridges++] =
+									g->islands[i].bridges[j]->id;
+
+								g->islands[i].bridges[j]->island_a->current_value--;
+								g->islands[i].bridges[j]->island_b->current_value--;
+							}
+						}
+					}
+					else if (!g->islands[i].bridges[2]) {
+						for (int j = 0; j < 4; j++) {
+							if (j != 2) {
+								g->placed_bridges[g->n_placed_bridges++] =
+									g->islands[i].bridges[j]->id;
+
+								g->islands[i].bridges[j]->island_a->current_value--;
+								g->islands[i].bridges[j]->island_b->current_value--;
+							}
+						}
+					}
+					else if (!g->islands[i].bridges[3]) {
+						for (int j = 0; j < 3; j++) {
+							g->placed_bridges[g->n_placed_bridges++] =
+								g->islands[i].bridges[j]->id;
+
+							g->islands[i].bridges[j]->island_a->current_value--;
+							g->islands[i].bridges[j]->island_b->current_value--;
+						}
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 6:
+					if (!g->islands[i].bridges[0]) {
+						for (int j = 1; j < 4; j++) {
+							g->placed_bridges[g->n_placed_bridges++] =
+								g->islands[i].bridges[j]->id;
+							g->placed_bridges[g->n_placed_bridges++] =
+								g->islands[i].bridges[j]->id;
+
+							g->islands[i].bridges[j]->island_a->current_value -= 2;
+							g->islands[i].bridges[j]->island_b->current_value -= 2;
+						}
+					}
+					else if (!g->islands[i].bridges[1]) {
+						for (int j = 0; j < 4; j++) {
+							if (j != 1) {
+								g->placed_bridges[g->n_placed_bridges++] =
+									g->islands[i].bridges[j]->id;
+								g->placed_bridges[g->n_placed_bridges++] =
+									g->islands[i].bridges[j]->id;
+
+								g->islands[i].bridges[j]->island_a->current_value -= 2;
+								g->islands[i].bridges[j]->island_b->current_value -= 2;
+							}
+						}
+					}
+					else if (!g->islands[i].bridges[2]) {
+						for (int j = 0; j < 4; j++) {
+							if (j != 2) {
+								g->placed_bridges[g->n_placed_bridges++] =
+									g->islands[i].bridges[j]->id;
+								g->placed_bridges[g->n_placed_bridges++] =
+									g->islands[i].bridges[j]->id;
+
+								g->islands[i].bridges[j]->island_a->current_value -= 2;
+								g->islands[i].bridges[j]->island_b->current_value -= 2;
+							}
+						}
+					}
+					else if (!g->islands[i].bridges[3]) {
+						for (int j = 0; j < 3; j++) {
+							g->placed_bridges[g->n_placed_bridges++] =
+								g->islands[i].bridges[j]->id;
+							g->placed_bridges[g->n_placed_bridges++] =
+								g->islands[i].bridges[j]->id;
+
+							g->islands[i].bridges[j]->island_a->current_value -= 2;
+							g->islands[i].bridges[j]->island_b->current_value -= 2;
+						}
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 7:
+					for (int j = 0; j < 4; j++) {
+						g->placed_bridges[g->n_placed_bridges++] =
+							g->islands[i].bridges[j]->id;
+
+						g->islands[i].bridges[j]->island_a->current_value--;
+						g->islands[i].bridges[j]->island_b->current_value--;
+					}
+
+					break;
+
+				case 8:
+					for (int j = 0; j < 4; j++) {
+						g->placed_bridges[g->n_placed_bridges++] =
+							g->islands[i].bridges[j]->id;
+						g->placed_bridges[g->n_placed_bridges++] =
+							g->islands[i].bridges[j]->id;
+
+						g->islands[i].bridges[j]->island_a->current_value -= 2;
+						g->islands[i].bridges[j]->island_b->current_value -= 2;
+					}
+
+					break;
+
+				default:
+					not_modified++;
+			}
+		}
+	//}
+	//while (not_modified < g->n_islands);
 }
 
 /*
  * Solves the game.
  */
 void play(Game* g) {
+	print(g);
+	fflush(stdout);
 	addObviousBridges(g);
 	print(g);
 
