@@ -37,6 +37,9 @@ typedef struct {
 	int n_islands, n_bridges; // Arrays lengths
 	Island* islands;
 	Bridge* bridges;
+	int* placed_bridges; // Ids of currently placed bridges
+	int* n_crosses; // Number of intersections for each bridge
+	int** crosses; // List of bridge intersecions
 } Game;
 
 
@@ -163,6 +166,15 @@ void findNeighbours(Game* g) {
 	g->n_bridges = bridge_id;
 	g->bridges = (Bridge*)realloc(g->bridges, g->n_bridges * sizeof(Bridge));
 
+	g->placed_bridges = (int*)malloc(g->n_bridges * sizeof(int));
+	g->n_crosses = (int*)malloc(g->n_bridges * sizeof(int));
+	g->crosses = (int**)malloc(g->n_bridges * sizeof(int*));
+
+	for (int i = 0; i < g->n_bridges; i++) {
+		g->n_crosses[i] = 0;
+		g->crosses[i] = (int*)malloc(g->n_bridges * sizeof(int));
+	}
+
 #ifndef NDEBUG
 	puts("Neighbours:\n");
 	for (int i = 0; i < g->n_islands; i++) {
@@ -187,6 +199,55 @@ void findNeighbours(Game* g) {
 }
 
 /*
+ * Checks if two bridges intersect.
+ */
+inline int intersect(Bridge* a, Bridge* b) {
+	int vec_a_l = a->island_a->line - a->island_b->line;
+	int vec_a_c = a->island_a->column - a->island_b->column;
+
+	int vec_b_l = b->island_a->line - b->island_b->line;
+	int vec_b_c = b->island_a->column - b->island_b->column;
+
+	if (((vec_a_l * (b->island_a->column - a->island_b->column) -
+			vec_a_c * (b->island_a->line - a->island_b->line)) *
+		(vec_a_l * (b->island_b->column - a->island_b->column) -
+			vec_a_c * (b->island_b->line - a->island_b->line)) < 0) &&
+		((vec_b_l * (a->island_a->column - b->island_b->column) -
+			vec_b_c * (a->island_a->line - b->island_b->line)) *
+		(vec_b_l * (a->island_b->column - b->island_b->column) -
+			vec_b_c * (a->island_b->line - b->island_b->line)) < 0))
+		return 1;
+
+	return 0;
+}
+
+/*
+ * Force-brute finding of bridge intersections for faster queries.
+ */
+void calcIntersections(Game* g) {
+#ifndef NDEBUG
+	puts("\nIntersections:\n");
+#endif	// NDEBUG
+
+	for (int i = 0; i < g->n_bridges; i++) {
+		for (int j = i + 1; j < g->n_bridges; j++) {
+			if (intersect(g->bridges + i, g->bridges + j) == 1) {
+				g->crosses[i][g->n_crosses[i]++] = j;
+				g->crosses[j][g->n_crosses[j]++] = i;
+
+#ifndef NDEBUG
+				printf("%d %d\n", i, j);
+#endif	// NDEBUG
+			}
+		}
+	}
+
+#ifndef NDEBUG
+	puts("");
+#endif	// NDEBUG
+}
+
+/*
  * Reads input file and creates the game
  */
 void create(Game* g) {
@@ -205,8 +266,8 @@ void create(Game* g) {
 		scanf("%d %d %d", &x, &y, &g->islands[i].value);
 
 		g->islands[i].id = i;
-		g->islands[i].line = 3 * (g->n - y - 1) + 1;
-		g->islands[i].column = 3 * x + 1;
+		g->islands[i].line = g->n - y - 1;
+		g->islands[i].column = x;
 		g->islands[i].current_value = g->islands[i].value;
 		g->total_bridges += g->islands[i].value;
 	}
@@ -214,6 +275,7 @@ void create(Game* g) {
 	g->total_bridges >>= 1; // Bridges were counted twice
 
 	findNeighbours(g);
+	calcIntersections(g);
 }
 
 /*
@@ -221,11 +283,19 @@ void create(Game* g) {
  */
 void clear(Game* g) {
 #ifndef NDEBUG
-	puts("Free islands");
-	fflush(stdout);
+	puts("Free placed bridges");
 #endif	// NDEBUG
 
-	free(g->islands);
+	free(g->placed_bridges);
+
+#ifndef NDEBUG
+	puts("Free crosses");
+#endif	// NDEBUG
+
+	for (int i = 0; i < g->n_bridges; i++)
+		free(g->crosses[i]);
+	free(g->crosses);
+	free(g->n_crosses);
 
 #ifndef NDEBUG
 	puts("Free bridges");
@@ -233,6 +303,13 @@ void clear(Game* g) {
 #endif	// NDEBUG
 
 	free(g->bridges);
+
+#ifndef NDEBUG
+	puts("Free islands");
+	fflush(stdout);
+#endif	// NDEBUG
+
+	free(g->islands);
 }
 
 
