@@ -3,3 +3,6 @@ backtracking: backtracking.o
 
 optimizedBT: optimizedBT.o
 	gcc -std=c11 optimizedBT.c -o optimizedBT -O3
+
+geometric: geometric.o
+	gcc -std=c11 geometric.c -o geometric -O3

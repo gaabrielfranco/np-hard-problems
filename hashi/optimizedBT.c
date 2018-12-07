@@ -141,7 +141,7 @@ void create(Game* g) {
 		g->board[g->islands[i].line][g->islands[i].column] = i;
 	}
 
-	g->n_bridges /= 2; // Bridges were count twice
+	g->n_bridges /= 2; // Bridges were counted twice
 
 	findneighbours(g);
 }
