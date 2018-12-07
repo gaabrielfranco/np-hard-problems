@@ -1,0 +1,32 @@
+backtracking:
+
+	0 - deu bom
+	1 - deu bom
+	2 - deu bom
+	3 - garrou
+	4 - garrou
+	5 - garrou
+	6 - deu bom
+	7 - garrou
+	8 - garrou
+	9 - garrou
+	10 - garrou
+	11 - garrou
+	12 - garrou
+
+
+optimizedBT:
+
+	0 - deu bom
+	1 - deu bom
+	2 - deu bom
+	3 - garrou
+	4 - garrou
+	5 - garrou
+	6 - deu bom
+	7 - garrou
+	8 - deu bom
+	9 - garrou
+	10 - garrou
+	11 - deu bom
+	12 - garrou
