@@ -166,7 +166,7 @@ void findNeighbours(Game* g) {
 	g->n_bridges = bridge_id;
 	g->bridges = (Bridge*)realloc(g->bridges, g->n_bridges * sizeof(Bridge));
 
-	g->placed_bridges = (int*)malloc(g->n_bridges * sizeof(int));
+	g->placed_bridges = (int*)malloc(g->total_bridges * sizeof(int));
 	g->n_crosses = (int*)malloc(g->n_bridges * sizeof(int));
 	g->crosses = (int**)malloc(g->n_bridges * sizeof(int*));
 
@@ -374,6 +374,10 @@ void print(Game* g) {
  * Brute-force, improve later
  */
 int canAddBridge(Game* g, int bridge_id) {
+	if (g->bridges[bridge_id].island_a->current_value == 0 ||
+		g->bridges[bridge_id].island_b->current_value == 0)
+		return 0;
+
 	for (int i = 0; i < g->n_placed_bridges; i++)
 		for (int j = 0; j < g->n_crosses[bridge_id]; j++)
 			if (g->crosses[bridge_id][j] == g->placed_bridges[i])
@@ -537,7 +541,7 @@ void addObviousBridges(Game* g) {
 							g->islands[i].bridges[3]->island_a->
 								current_value--;
 							g->islands[i].bridges[3]->island_b->
-								current_value--;	
+								current_value--;
 						}
 						else if (!g->islands[i].bridges[3]) {
 							g->placed_bridges[g->n_placed_bridges++] =
@@ -874,6 +878,11 @@ void addObviousBridges(Game* g) {
 					not_modified++;
 			}
 		}
+
+#ifndef NDEBUG
+		printf("Bridges placed: %d Total: %d\n", g->n_placed_bridges, g->total_bridges);
+		fflush(stdout);
+#endif	// NDEBUG
 	}
 	while (not_modified < g->n_islands);
 }
@@ -887,6 +896,7 @@ void play(Game* g) {
 
 #ifndef NDEBUG
 	puts("\nObvious bridges added\n");
+	fflush(stdout);
 #endif	// NDEBUG
 
 	//backtracking(g, 0);
@@ -898,12 +908,14 @@ void play(Game* g) {
 void clear(Game* g) {
 #ifndef NDEBUG
 	puts("Free placed bridges");
+	fflush(stdout);
 #endif	// NDEBUG
 
 	free(g->placed_bridges);
 
 #ifndef NDEBUG
 	puts("Free crosses");
+	fflush(stdout);
 #endif	// NDEBUG
 
 	for (int i = 0; i < g->n_bridges; i++)
