@@ -21,7 +21,7 @@ typedef struct {
 	int n, m, n_islands, n_bridges, n_placed_bridges;
 	int** board;
 	Island* islands;
-	int (*neighbour_ids)[4]; // Each island has, at most, 4 neighbors
+	int (*neighbour_ids)[4]; // Each island has, at most, 4 neighbours
 	int* visitado; // Auxiliary
 } Game;
 
@@ -54,9 +54,9 @@ inline int max(int a, int b) {
 }
 
 /*
- * Finds each island neighbors for faster queries
+ * Finds each island neighbours for faster queries
  */
-void findNeighbors(Game* g) {
+void findneighbours(Game* g) {
 	int l, c;
 
 	for (int i = 0; i < g->n_islands; i++) {
@@ -142,7 +142,7 @@ void create(Game* g) {
 
 	g->n_bridges /= 2; // Bridges were count twice
 
-	findNeighbors(g);
+	findneighbours(g);
 }
 
 /*
@@ -395,35 +395,46 @@ void removeBridge(Game* g, int id, Direction dir) {
 }
 
 /*
- * Procedure of 'checkIfIsolated' function
+ * Procedure of 'checkIfIsolated' function.
+ * Returns the number of visited islands.
  */
 int isolatedProcedure(Game* g, int id) {
-	if (g->visitado[id] == 1)
-		return 1;
+	g->visitado[id] = g->islands[id].current_value + 1;
 
-	g->visitado[id] = 1;
+	int sum = 0;
 
-	int possible = 0;
+	int l = g->islands[id].line;
+	int c = g->islands[id].column;
 
-	if (g->islands[id].current_value > 0) {
-		for (int i = 0; i < 4; i++) {
-			if (g->neighbour_ids[id][i] != BORDER &&
-				g->islands[g->neighbour_ids[id][i]].current_value > 0) {
-				possible = 1;
-				break;
-			}
-		}
+	// UP
+	if (g->neighbour_ids[id][UP] != BORDER &&
+		(g->board[l - 1][c] == VERTICAL_BRIDGE ||
+		g->board[l - 1][c] == DOUBLE_VERTICAL_BRIDGE) &&
+		g->visitado[g->neighbour_ids[id][UP]] == 0)
+		sum += isolatedProcedure(g, g->neighbour_ids[id][UP]);
 
-		if (possible == 1) // Not isolated
-			return 0;
-	}
+	// DOWN
+	if (g->neighbour_ids[id][DOWN] != BORDER &&
+		(g->board[l + 1][c] == VERTICAL_BRIDGE ||
+		g->board[l + 1][c] == DOUBLE_VERTICAL_BRIDGE) &&
+		g->visitado[g->neighbour_ids[id][DOWN]] == 0)
+		sum += isolatedProcedure(g, g->neighbour_ids[id][DOWN]);
 
-	for (int i = 0; i < 4; i++)
-		if (g->neighbour_ids[id][i] != BORDER &&
-			isolatedProcedure(g, g->neighbour_ids[id][i]) == 0)
-			return 0;
+	// LEFT
+	if (g->neighbour_ids[id][LEFT] != BORDER &&
+		(g->board[l][c - 1] == VERTICAL_BRIDGE ||
+		g->board[l][c - 1] == DOUBLE_VERTICAL_BRIDGE) &&
+		g->visitado[g->neighbour_ids[id][LEFT]] == 0)
+		sum += isolatedProcedure(g, g->neighbour_ids[id][LEFT]);
 
-	return 1;
+	// RIGHT
+	if (g->neighbour_ids[id][RIGHT] != BORDER &&
+		(g->board[l][c + 1] == VERTICAL_BRIDGE ||
+		g->board[l][c + 1] == DOUBLE_VERTICAL_BRIDGE) &&
+		g->visitado[g->neighbour_ids[id][RIGHT]] == 0)
+		sum += isolatedProcedure(g, g->neighbour_ids[id][RIGHT]);
+
+	return sum + 1;
 }
 
 /*
@@ -434,20 +445,20 @@ int isolated(Game* g, int id) {
 	for (int i = 0; i < g->n_islands; i++)
 		g->visitado[i] = 0;
 
-	if (isolatedProcedure(g, id) == 1) {
-		for (int i = 0; i < g->n_islands; i++) {
-printf("%d ", g->visitado[i]);
-			if (g->visitado[i] == 0)
-				return 1;
-		}
-puts("");
-	}
+	int n_visited = isolatedProcedure(g, id);
 
-	return 0;
+	if (n_visited == g->n_islands)
+		return 1;
+
+	for (int i = 0; i < g->n_islands; i++) {
+		if (g->visitado[i] > 1)
+			return 0;
+
+	return 1;
 }
 
 /*
- * Checks if island needs more bridges and there are neighbors which
+ * Checks if island needs more bridges and there are neighbours which
  * can have more bridges attached.
  * Returns 1 if possible, 0 otherwise.
  */
@@ -507,8 +518,10 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
  * Solves the game. Returns 1 when done.
  */
 int play(Game* g, int id) {
-	if (numberOfBridgesCanBeSatisfied(g, id) == 0) // Impossible to continue
-		return 0;
+	for (int i = 0; i < g->n_islands; i++)
+		if (numberOfBridgesCanBeSatisfied(g, i) == 0)
+			// Impossible to continue
+			return 0;
 
 	if (g->n_bridges == g->n_placed_bridges) // All bridges are set
 		return 1;
@@ -525,8 +538,7 @@ int play(Game* g, int id) {
 		result = addBridge(g, id, UP);
 
 		if (result == 1) {
-			//if (isolated(g, id) == 0) {
-			{
+			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
 				print(g);
 
@@ -545,8 +557,7 @@ int play(Game* g, int id) {
 		result = addBridge(g, id, DOWN);
 
 		if (result == 1) {
-			//if (isolated(g, id) == 0) {
-			{
+			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
 				print(g);
 				
@@ -565,8 +576,7 @@ int play(Game* g, int id) {
 		result = addBridge(g, id, LEFT);
 
 		if (result == 1) {
-			//if (isolated(g, id) == 0) {
-			{
+			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
 				print(g);
 
@@ -585,8 +595,7 @@ int play(Game* g, int id) {
 		result = addBridge(g, id, RIGHT);
 
 		if (result == 1) {
-			//if (isolated(g, id) == 0) {
-			{
+			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
 				print(g);
 
@@ -620,36 +629,7 @@ int main() {
 	Game game;
 
 	create(&game);
-/*
-	addBridge(&game, 9, UP);
-	addBridge(&game, 9, DOWN);
-	addBridge(&game, 9, RIGHT);
-	addBridge(&game, 12, UP);
-	addBridge(&game, 9, LEFT);
-
-	print(&game);
-
-	removeBridge(&game, 9, UP);
-	removeBridge(&game, 9, DOWN);
-	removeBridge(&game, 9, RIGHT);
-	removeBridge(&game, 12, UP);
-	removeBridge(&game, 9, LEFT);
-
-	addBridge(&game, 9, UP);
-	print(&game);
-	addBridge(&game, 9, UP);
-	print(&game);
-	addBridge(&game, 9, DOWN);
-	print(&game);
-	addBridge(&game, 9, DOWN);
-	print(&game);
-	addBridge(&game, 9, LEFT);
-	print(&game);
-	addBridge(&game, 9, LEFT);
-	print(&game);
-*/
 	play(&game, 0);
-
 	clear(&game);
 
 	return 0;
