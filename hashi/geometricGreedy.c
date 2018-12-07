@@ -1122,7 +1122,27 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
 }
 
 void greedy(Game* g) {
-	
+	for (int i = 0; i < g->n_islands; i++) {
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 2; k++) {
+				if (g->islands[i].bridges[j] &&
+					g->islands[i].bridges[j]->used < 2 &&
+					g->islands[i].bridges[j]->island_a->current_value > 0 &&
+					g->islands[i].bridges[j]->island_b->current_value > 0 &&
+					canAddBridge(g, g->islands[i].bridges[j]->id)) {
+					g->placed_bridges[g->n_placed_bridges++] =
+						g->islands[i].bridges[j]->id;
+
+					g->islands[i].bridges[j]->island_a->
+						current_value--;
+					g->islands[i].bridges[j]->island_b->
+						current_value--;
+
+					print(g);
+				}
+			}
+		}
+	}
 }
 
 /*
