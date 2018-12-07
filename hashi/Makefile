@@ -6,3 +6,9 @@ optimizedBT: optimizedBT.o
 
 geometric: geometric.o
 	gcc -std=c11 geometric.c -o geometric -O3
+
+greedy: greedy.o
+	gcc -std=c11 greedy.c -o greedy -O3
+
+geometricGreedy: geometricGreedy.o
+	gcc -std=c11 geometricGreedy.c -o geometricGreedy -O3

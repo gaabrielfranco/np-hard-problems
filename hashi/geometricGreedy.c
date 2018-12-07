@@ -1120,96 +1120,11 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
 	else
 		return 0;
 }
-#ifdef XABLAU
-/*
- * Backtracking. Returns 1 when done.
- */
-int backtracking(Game* g, int id) {
-	for (int i = 0; i < g->n_islands; i++)
-		if (numberOfBridgesCanBeSatisfied(g, i) == 0)
-			// Impossible to continue
-			return 0;
 
-print(g);
-
-	if (g->total_bridges == g->n_placed_bridges) // All bridges are set
-		return 1;
-
-	if (g->islands[id].current_value == 0 &&
-		id < g->n_islands - 1)
-		backtracking(g, id + 1);
-
-	int l = g->islands[id].line;
-	int c = g->islands[id].column;
-
-	if (g->islands[id].bridges[0] &&
-		g->islands[id].bridges[0]->used < 2 &&
-		g->islands[id].bridges[0]->island_a->current_value > 0 &&
-		g->islands[id].bridges[0]->island_b->current_value > 0) {
-		g->placed_bridges[g->n_placed_bridges++] =
-			g->islands[id].bridges[0]->id;
-
-		g->islands[id].bridges[0]->island_a->current_value--;
-		g->islands[id].bridges[0]->island_b->current_value--;
-
-		if (backtracking(g, id) == 1)
-			return 1;
-
-		g->n_placed_bridges--;
-	}
-
-	if (g->islands[id].bridges[1] &&
-		g->islands[id].bridges[1]->used < 2 &&
-		g->islands[id].bridges[1]->island_a->current_value > 0 &&
-		g->islands[id].bridges[1]->island_b->current_value > 0) {
-		g->placed_bridges[g->n_placed_bridges++] =
-			g->islands[id].bridges[0]->id;
-
-		g->islands[id].bridges[1]->island_a->current_value--;
-		g->islands[id].bridges[1]->island_b->current_value--;
-
-		if (backtracking(g, id) == 1)
-			return 1;
-
-		g->n_placed_bridges--;
-	}
-
-	if (g->islands[id].bridges[2] &&
-		g->islands[id].bridges[2]->used < 2 &&
-		g->islands[id].bridges[2]->island_a->current_value > 0 &&
-		g->islands[id].bridges[2]->island_b->current_value > 0) {
-		g->placed_bridges[g->n_placed_bridges++] =
-			g->islands[id].bridges[0]->id;
-
-		g->islands[id].bridges[2]->island_a->current_value--;
-		g->islands[id].bridges[2]->island_b->current_value--;
-
-		if (backtracking(g, id) == 1)
-			return 1;
-
-		g->n_placed_bridges--;
-	}
-
-	if (g->islands[id].bridges[3] &&
-		g->islands[id].bridges[3]->used < 2 &&
-		g->islands[id].bridges[3]->island_a->current_value > 0 &&
-		g->islands[id].bridges[3]->island_b->current_value > 0) {
-		g->placed_bridges[g->n_placed_bridges++] =
-			g->islands[id].bridges[0]->id;
-
-		g->islands[id].bridges[3]->island_a->current_value--;
-		g->islands[id].bridges[3]->island_b->current_value--;
-
-		if (backtracking(g, id) == 1)
-			return 1;
-
-		g->n_placed_bridges--;
-	}
-
-	if (id < g->n_islands - 1)
-		backtracking(g, id + 1);
+void greedy(Game* g) {
+	
 }
-#endif
+
 /*
  * Solves the game.
  */
@@ -1222,7 +1137,7 @@ void play(Game* g) {
 	fflush(stdout);
 #endif	// NDEBUG
 
-	//backtracking(g, 0);
+	greedy(g);
 
 	print(g);
 }
