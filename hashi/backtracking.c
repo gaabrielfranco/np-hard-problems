@@ -422,15 +422,15 @@ int isolatedProcedure(Game* g, int id) {
 
 	// LEFT
 	if (g->neighbour_ids[id][LEFT] != BORDER &&
-		(g->board[l][c - 1] == VERTICAL_BRIDGE ||
-		g->board[l][c - 1] == DOUBLE_VERTICAL_BRIDGE) &&
+		(g->board[l][c - 1] == HORIZONTAL_BRIDGE ||
+		g->board[l][c - 1] == DOUBLE_HORIZONTAL_BRIDGE) &&
 		g->visitado[g->neighbour_ids[id][LEFT]] == 0)
 		sum += isolatedProcedure(g, g->neighbour_ids[id][LEFT]);
 
 	// RIGHT
 	if (g->neighbour_ids[id][RIGHT] != BORDER &&
-		(g->board[l][c + 1] == VERTICAL_BRIDGE ||
-		g->board[l][c + 1] == DOUBLE_VERTICAL_BRIDGE) &&
+		(g->board[l][c + 1] == HORIZONTAL_BRIDGE ||
+		g->board[l][c + 1] == DOUBLE_HORIZONTAL_BRIDGE) &&
 		g->visitado[g->neighbour_ids[id][RIGHT]] == 0)
 		sum += isolatedProcedure(g, g->neighbour_ids[id][RIGHT]);
 
@@ -448,9 +448,9 @@ int isolated(Game* g, int id) {
 	int n_visited = isolatedProcedure(g, id);
 
 	if (n_visited == g->n_islands)
-		return 1;
+		return 0;
 
-	for (int i = 0; i < g->n_islands; i++) {
+	for (int i = 0; i < g->n_islands; i++)
 		if (g->visitado[i] > 1)
 			return 0;
 
