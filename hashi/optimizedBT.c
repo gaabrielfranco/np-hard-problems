@@ -1,7 +1,8 @@
 /******************************************************************************
  * INF 610 - Estruturas de Dados e Algoritmos - 2018/2                        *
  *                                                                            *
- * Hashiwokakero brute-force/backtracking solution.                           *
+ * Hashiwokakero solution. Obvious bridges are added, than a backtracking is  *
+ * used to solve the remaining problem.                                       *
  *                                                                            *
  *****************************************************************************/
 
@@ -515,9 +516,9 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
 }
 
 /*
- * Solves the game. Returns 1 when done.
+ * Backtracking. Returns 1 when done.
  */
-int play(Game* g, int id) {
+int backtracking(Game* g, int id) {
 	for (int i = 0; i < g->n_islands; i++)
 		if (numberOfBridgesCanBeSatisfied(g, i) == 0)
 			// Impossible to continue
@@ -542,7 +543,7 @@ int play(Game* g, int id) {
 				// If edge didn't make a isolated component
 				print(g);
 
-				if (play(g, id) == 1)
+				if (backtracking(g, id) == 1)
 					return 1;
 			}
 
@@ -561,7 +562,7 @@ int play(Game* g, int id) {
 				// If edge didn't make a isolated component
 				print(g);
 				
-				if (play(g, id) == 1)
+				if (backtracking(g, id) == 1)
 					return 1;
 			}
 
@@ -580,7 +581,7 @@ int play(Game* g, int id) {
 				// If edge didn't make a isolated component
 				print(g);
 
-				if (play(g, id) == 1)
+				if (backtracking(g, id) == 1)
 					return 1;
 			}
 
@@ -599,7 +600,7 @@ int play(Game* g, int id) {
 				// If edge didn't make a isolated component
 				print(g);
 
-				if (play(g, id) == 1)
+				if (backtracking(g, id) == 1)
 					return 1;
 			}
 
@@ -608,7 +609,268 @@ int play(Game* g, int id) {
 	}
 
 	if (id < g->n_islands - 1)
-		play(g, id + 1);
+		backtracking(g, id + 1);
+}
+
+/*
+ * Adds all obvious bridges to the board.
+ * Fon instance, is an island needs 8 bridges, it must have 2 bridges
+ * in all four directions.
+ */
+void addObviousBridges(Game* g) {
+	// Number islands which had no bridge addition per iteration
+	int not_modified;
+
+	do {
+		not_modified = 0;
+
+		for (int i = 0; i < g->n_islands; i++) {
+			switch (g->islands[i].current_value) {
+				case 1:
+					if (g->neighbour_ids[i][UP] == BORDER &&
+						g->neighbour_ids[i][DOWN] == BORDER &&
+						g->neighbour_ids[i][LEFT] == BORDER)
+						addBridge(g, i, RIGHT);
+					else if (g->neighbour_ids[i][UP] == BORDER &&
+						g->neighbour_ids[i][DOWN] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER)
+						addBridge(g, i, LEFT);
+					else if (g->neighbour_ids[i][UP] == BORDER &&
+						g->neighbour_ids[i][LEFT] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER)
+						addBridge(g, i, DOWN);
+					else if (g->neighbour_ids[i][DOWN] == BORDER &&
+						g->neighbour_ids[i][LEFT] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER)
+						addBridge(g, i, UP);
+					else
+						not_modified++;
+
+					break;
+
+				case 2:
+					if (g->neighbour_ids[i][UP] == BORDER &&
+						g->neighbour_ids[i][DOWN] == BORDER &&
+						g->neighbour_ids[i][LEFT] == BORDER) {
+						addBridge(g, i, RIGHT);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][UP] == BORDER &&
+						g->neighbour_ids[i][DOWN] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, LEFT);
+						addBridge(g, i, LEFT);
+					}
+					else if (g->neighbour_ids[i][UP] == BORDER &&
+						g->neighbour_ids[i][LEFT] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, DOWN);
+						addBridge(g, i, DOWN);
+					}
+					else if (g->neighbour_ids[i][DOWN] == BORDER &&
+						g->neighbour_ids[i][LEFT] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, UP);
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 3:
+					if (g->neighbour_ids[i][UP] == BORDER) {
+						if (g->neighbour_ids[i][DOWN] == BORDER) {
+							addBridge(g, i, LEFT);
+							addBridge(g, i, RIGHT);
+						}
+						else if (g->neighbour_ids[i][LEFT] == BORDER) {
+							addBridge(g, i, DOWN);
+							addBridge(g, i, RIGHT);
+						}
+						else if (g->neighbour_ids[i][RIGHT] == BORDER) {
+							addBridge(g, i, DOWN);
+							addBridge(g, i, LEFT);
+						}
+						else
+							not_modified++;
+					}
+					else if (g->neighbour_ids[i][DOWN] == BORDER) {
+						if (g->neighbour_ids[i][LEFT] == BORDER) {
+							addBridge(g, i, UP);
+							addBridge(g, i, RIGHT);
+						}
+						else if (g->neighbour_ids[i][RIGHT] == BORDER) {
+							addBridge(g, i, UP);
+							addBridge(g, i, LEFT);
+						}
+						else
+							not_modified++;
+					}					
+					else if (g->neighbour_ids[i][LEFT] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, DOWN);
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 4:
+					if (g->neighbour_ids[i][UP] == BORDER) {
+						if (g->neighbour_ids[i][DOWN] == BORDER) {
+							addBridge(g, i, LEFT);
+							addBridge(g, i, LEFT);
+							addBridge(g, i, RIGHT);
+							addBridge(g, i, RIGHT);
+						}
+						else if (g->neighbour_ids[i][LEFT] == BORDER) {
+							addBridge(g, i, DOWN);
+							addBridge(g, i, DOWN);
+							addBridge(g, i, RIGHT);
+							addBridge(g, i, RIGHT);
+						}
+						else if (g->neighbour_ids[i][RIGHT] == BORDER) {
+							addBridge(g, i, DOWN);
+							addBridge(g, i, DOWN);
+							addBridge(g, i, LEFT);
+							addBridge(g, i, LEFT);
+						}
+						else
+							not_modified++;
+					}
+					else if (g->neighbour_ids[i][DOWN] == BORDER) {
+						if (g->neighbour_ids[i][LEFT] == BORDER) {
+							addBridge(g, i, UP);
+							addBridge(g, i, UP);
+							addBridge(g, i, RIGHT);
+							addBridge(g, i, RIGHT);
+						}
+						else if (g->neighbour_ids[i][RIGHT] == BORDER) {
+							addBridge(g, i, UP);
+							addBridge(g, i, UP);
+							addBridge(g, i, LEFT);
+							addBridge(g, i, LEFT);
+						}
+						else
+							not_modified++;
+					}					
+					else if (g->neighbour_ids[i][LEFT] == BORDER &&
+						g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, UP);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, DOWN);
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 5:
+					if (g->neighbour_ids[i][UP] == BORDER) {
+						addBridge(g, i, DOWN);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][DOWN] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][LEFT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, LEFT);
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 6:
+					if (g->neighbour_ids[i][UP] == BORDER) {
+						addBridge(g, i, DOWN);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, RIGHT);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][DOWN] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, UP);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, RIGHT);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][LEFT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, UP);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, RIGHT);
+						addBridge(g, i, RIGHT);
+					}
+					else if (g->neighbour_ids[i][RIGHT] == BORDER) {
+						addBridge(g, i, UP);
+						addBridge(g, i, UP);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, DOWN);
+						addBridge(g, i, LEFT);
+						addBridge(g, i, LEFT);
+					}
+					else
+						not_modified++;
+
+					break;
+
+				case 7:
+					addBridge(g, i, UP);
+					addBridge(g, i, DOWN);
+					addBridge(g, i, LEFT);
+					addBridge(g, i, RIGHT);
+
+					break;
+
+				case 8:
+					addBridge(g, i, UP);
+					addBridge(g, i, UP);
+					addBridge(g, i, DOWN);
+					addBridge(g, i, DOWN);
+					addBridge(g, i, LEFT);
+					addBridge(g, i, LEFT);
+					addBridge(g, i, RIGHT);
+					addBridge(g, i, RIGHT);
+
+					break;
+
+				default:
+					not_modified++;
+			}
+		}
+
+		printf("%d\n", not_modified);
+		print(g);
+	}
+	while (not_modified < g->n_islands);
+}
+
+/*
+ * Solves the game.
+ */
+void play(Game* g) {
+	print(g);
+	addObviousBridges(g);
+	puts("\nObvious bridges added\n"); // To find in solution with 'ctrl + f'
+	backtracking(g, 0);
 }
 
 /*
@@ -629,7 +891,7 @@ int main() {
 	Game game;
 
 	create(&game);
-	play(&game, 0);
+	play(&game);
 	clear(&game);
 
 	return 0;
