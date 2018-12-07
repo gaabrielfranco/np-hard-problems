@@ -78,7 +78,10 @@ void findNeighbours(Game* g) {
 		}
 
 		// If neighbour was found and was not previously created
-		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[1]) {
+		// and neighter the current island nor its neighbour support
+		// only one bridge
+		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[1] &&
+			(g->islands[i].value > 1 || g->islands[neighbour_id].value > 1)) {
 			g->bridges[bridge_id].id = bridge_id;
 			g->bridges[bridge_id].island_a = g->islands + i;
 			g->bridges[bridge_id].island_b = g->islands + neighbour_id;
@@ -101,7 +104,10 @@ void findNeighbours(Game* g) {
 		}
 
 		// If neighbour was found and was not previously created
-		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[0]) {
+		// and neighter the current island nor its neighbour support
+		// only one bridge
+		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[0] &&
+			(g->islands[i].value > 1 || g->islands[neighbour_id].value > 1)) {
 			g->bridges[bridge_id].id = bridge_id;
 			g->bridges[bridge_id].island_a = g->islands + i;
 			g->bridges[bridge_id].island_b = g->islands + neighbour_id;
@@ -124,7 +130,10 @@ void findNeighbours(Game* g) {
 		}
 
 		// If neighbour was found and was not previously created
-		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[3]) {
+		// and neighter the current island nor its neighbour support
+		// only one bridge
+		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[3] &&
+			(g->islands[i].value > 1 || g->islands[neighbour_id].value > 1)) {
 			g->bridges[bridge_id].id = bridge_id;
 			g->bridges[bridge_id].island_a = g->islands + i;
 			g->bridges[bridge_id].island_b = g->islands + neighbour_id;
@@ -147,7 +156,10 @@ void findNeighbours(Game* g) {
 		}
 
 		// If neighbour was found and was not previously created
-		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[2]) {
+		// and neighter the current island nor its neighbour support
+		// only one bridge
+		if (neighbour_id >= 0 && !g->islands[neighbour_id].bridges[2] &&
+			(g->islands[i].value > 1 || g->islands[neighbour_id].value > 1)) {
 			g->bridges[bridge_id].id = bridge_id;
 			g->bridges[bridge_id].island_a = g->islands + i;
 			g->bridges[bridge_id].island_b = g->islands + neighbour_id;
