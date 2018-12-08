@@ -12,3 +12,6 @@ greedy: greedy.o
 
 geometricGreedy: geometricGreedy.o
 	gcc -std=c11 geometricGreedy.c -o geometricGreedy -O3
+
+greedyByIntersections: greedyByIntersections.o
+	gcc -std=c11 greedyByIntersections.c -o greedyByIntersections -O3
