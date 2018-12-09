@@ -22,7 +22,7 @@ size_t calc_cost(size_t* costs, size_t m, std::vector<size_t>& subset)
     size_t total_cost = 0;
     for (size_t i = 0; i < subset.size(); i++)
     {
-        total_cost += costs[subset[i] - 1];
+        total_cost += costs[subset[i]];
     }
 
     return total_cost;
@@ -70,8 +70,8 @@ bool is_solution(std::vector<std::vector<size_t>>& G, size_t n, size_t m,
         - costs: array of costs of each subset
 */
 
-void brute_foce_solver(std::vector<std::vector<size_t>>& G, size_t n, size_t m,
-                       size_t* costs)
+void brute_force_solver(std::vector<std::vector<size_t>>& G, size_t n, size_t m,
+                        size_t* costs)
 {
     std::vector<size_t> subset, min_subset;
     size_t min_cost = ULLONG_MAX;
@@ -188,15 +188,13 @@ int main(int argc, char** argv)
     char c;
     std::vector<std::vector<size_t>> G;
     std::vector<std::vector<size_t>> G_reverse;
-    size_t* costs = (size_t*)malloc(m * sizeof(size_t));
+    size_t costs[1000];
     std::vector<size_t> v;
 
     if (argc == 1 ||
         (argc == 2 && (strcmp(argv[1], "-bf") && strcmp(argv[1], "-gr") &&
                        strcmp(argv[1], "-all"))))
     {
-        // std::cout << argv[0] << std::endl;
-        // std::cout << argv[1] << std::endl;
         std::cout
             << "-bf: Executes the brute force algorithm\n-gr: Executes the "
                "greedy algorithm\n-all: Executes both algorithms\n";
@@ -204,7 +202,6 @@ int main(int argc, char** argv)
     }
 
     // Input
-
     scanf("%zu %zu", &n, &m);
 
     for (size_t i = 0; i < m; i++)
@@ -224,7 +221,7 @@ int main(int argc, char** argv)
 
     for (size_t i = 0; i < m; i++)
     {
-        scanf("%zu", &costs[i]);
+        std::cin >> costs[i];
     }
 
     if (!strcmp(argv[1], "-bf") || !strcmp(argv[1], "-all"))
@@ -232,7 +229,7 @@ int main(int argc, char** argv)
         // Brute force solution
         std::cout << "\nUsing Brute Force\n";
         auto start = Clock::now();
-        brute_foce_solver(G, n, m, costs);
+        brute_force_solver(G, n, m, costs);
         auto end = Clock::now();
         std::cout << "Brute Force duration: ";
         std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -253,5 +250,6 @@ int main(int argc, char** argv)
                          .count();
         std::cout << "ms\n";
     }
+
     return 0;
 }
