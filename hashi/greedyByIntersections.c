@@ -201,6 +201,9 @@ void findNeighbours(Game* g) {
 	for (int i = 0; i < g->n_bridges; i++) {
 		g->n_crosses[i] = 0;
 		g->crosses[i] = (int*)malloc(g->n_bridges * sizeof(int));
+
+		for (int j = 0; j < g->n_bridges; j++)
+			g->crosses[i][j] = 0;
 	}
 
 #ifndef NDEBUG
@@ -273,8 +276,11 @@ void calcIntersections(Game* g) {
 	for (int i = 0; i < g->n_bridges; i++) {
 		for (int j = i + 1; j < g->n_bridges; j++) {
 			if (doIntersect(g->bridges + i, g->bridges + j) == 1) {
-				g->crosses[i][g->n_crosses[i]++] = j;
-				g->crosses[j][g->n_crosses[j]++] = i;
+				g->crosses[i][j] = 1;
+				g->crosses[j][i] = 1;
+
+				g->n_crosses[i]++;
+				g->n_crosses[j]++;
 
 #ifndef NDEBUG
 				printf("%d %d\n", i, j);
@@ -409,10 +415,11 @@ int canAddBridge(Game* g, int bridge_id) {
 		g->bridges[bridge_id].used == 2)
 		return 0;
 
+	// If there's a placed bridge which intercepts the bridge[bridge_id]
+	// it can't be added.
 	for (int i = 0; i < g->n_placed_bridges; i++)
-		for (int j = 0; j < g->n_crosses[bridge_id]; j++)
-			if (g->crosses[bridge_id][j] == g->placed_bridges[i])
-				return 0;
+		if (g->crosses[bridge_id][g->placed_bridges[i]] == 1)
+			return 0;
 
 	return 1;
 }
