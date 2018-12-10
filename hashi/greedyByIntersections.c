@@ -2,9 +2,9 @@
  * INF 610 - Estruturas de Dados e Algoritmos - 2018/2                        *
  *                                                                            *
  * Greedy hashiwokakero 'solution'.                                           *
- *   - Bridge intersections are calculated first.                              *
- *   - The bridges are added to the board in inverse order of its number of   *
- *     intersections.                                                         *
+ *   - Bridge intersections are calculated first.                             *
+ *   - The bridges are added to the board by its number of intersections      *
+ *     (lower first).                                                         *
  *                                                                            *
  *****************************************************************************/
 
@@ -40,6 +40,7 @@ typedef struct {
 	int* placed_bridges; // Ids of currently placed bridges
 	int* n_crosses; // Number of intersections for each bridge
 	int** crosses; // List of bridge intersecions
+	int* visited; // Auxiliary for the 'isolated' function
 } Game;
 
 
@@ -299,6 +300,7 @@ void create(Game* g) {
 
 	g->islands = (Island*)malloc(g->n_islands * sizeof(Island));
 	g->bridges = (Bridge*)malloc(4 * g->n_islands * sizeof(Bridge));
+	g->visited = (int*)malloc(g->n_islands * sizeof(int));
 
 	g->total_bridges = g->n_placed_bridges = 0;
 
@@ -426,96 +428,80 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
 	// UP
 	if (g->islands[id].bridges[0]) {
 		if (g->islands[id].bridges[0]->used == 0) {
-			if (g->islands[id].bridges[0]->island_a->id == id) {
-				sum += min(2,
-					g->islands[id].bridges[0]->island_a->current_value);
-			}
-			else {
-				sum += min(2,
-					g->islands[id].bridges[0]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[0]->island_a->id == id)
+				sum +=
+					min(2, g->islands[id].bridges[0]->island_a->current_value);
+			else
+				sum +=
+					min(2, g->islands[id].bridges[0]->island_b->current_value);
 		}
 		else if (g->islands[id].bridges[0]->used == 1) {
-			if (g->islands[id].bridges[0]->island_a->id == id) {
-				sum += min(1,
-					g->islands[id].bridges[0]->island_a->current_value);
-			}
-			else {
-				sum += min(1,
-					g->islands[id].bridges[0]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[0]->island_a->id == id)
+				sum +=
+					min(1, g->islands[id].bridges[0]->island_a->current_value);
+			else
+				sum +=
+					min(1, g->islands[id].bridges[0]->island_b->current_value);
 		}
 	}
 
 	// DOWN
 	if (g->islands[id].bridges[1]) {
 		if (g->islands[id].bridges[1]->used == 0) {
-			if (g->islands[id].bridges[1]->island_a->id == id) {
-				sum += min(2,
-					g->islands[id].bridges[1]->island_a->current_value);
-			}
-			else {
-				sum += min(2,
-					g->islands[id].bridges[1]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[1]->island_a->id == id)
+				sum +=
+					min(2, g->islands[id].bridges[1]->island_a->current_value);
+			else
+				sum +=
+					min(2, g->islands[id].bridges[1]->island_b->current_value);
 		}
 		else if (g->islands[id].bridges[1]->used == 1) {
-			if (g->islands[id].bridges[1]->island_a->id == id) {
-				sum += min(1,
-					g->islands[id].bridges[1]->island_a->current_value);
-			}
-			else {
-				sum += min(1,
-					g->islands[id].bridges[1]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[1]->island_a->id == id)
+				sum +=
+					min(1, g->islands[id].bridges[1]->island_a->current_value);
+			else
+				sum +=
+					min(1, g->islands[id].bridges[1]->island_b->current_value);
 		}
 	}
 
 	// LEFT
 	if (g->islands[id].bridges[2]) {
 		if (g->islands[id].bridges[2]->used == 0) {
-			if (g->islands[id].bridges[2]->island_a->id == id) {
-				sum += min(2,
-					g->islands[id].bridges[2]->island_a->current_value);
-			}
-			else {
-				sum += min(2,
-					g->islands[id].bridges[2]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[2]->island_a->id == id)
+				sum +=
+					min(2, g->islands[id].bridges[2]->island_a->current_value);
+			else
+				sum += 
+					min(2, g->islands[id].bridges[2]->island_b->current_value);
 		}
 		else if (g->islands[id].bridges[2]->used == 1) {
-			if (g->islands[id].bridges[2]->island_a->id == id) {
-				sum += min(1,
-					g->islands[id].bridges[2]->island_a->current_value);
-			}
-			else {
-				sum += min(1,
-					g->islands[id].bridges[2]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[2]->island_a->id == id)
+				sum +=
+					min(1, g->islands[id].bridges[2]->island_a->current_value);
+			else
+				sum +=
+					min(1, g->islands[id].bridges[2]->island_b->current_value);
 		}
 	}
 
 	// RIGHT
 	if (g->islands[id].bridges[3]) {
 		if (g->islands[id].bridges[3]->used == 0) {
-			if (g->islands[id].bridges[3]->island_a->id == id) {
-				sum += min(2,
-					g->islands[id].bridges[3]->island_a->current_value);
-			}
-			else {
-				sum += min(2,
-					g->islands[id].bridges[3]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[3]->island_a->id == id)
+				sum +=
+					min(2, g->islands[id].bridges[3]->island_a->current_value);
+			else
+				sum +=
+					min(2, g->islands[id].bridges[3]->island_b->current_value);
 		}
 		else if (g->islands[id].bridges[3]->used == 1) {
-			if (g->islands[id].bridges[3]->island_a->id == id) {
-				sum += min(1,
-					g->islands[id].bridges[3]->island_a->current_value);
-			}
-			else {
-				sum += min(1,
-					g->islands[id].bridges[3]->island_b->current_value);	
-			}
+			if (g->islands[id].bridges[3]->island_a->id == id)
+				sum +=
+					min(1, g->islands[id].bridges[3]->island_a->current_value);
+			else
+				sum +=
+					min(1, g->islands[id].bridges[3]->island_b->current_value);
 		}
 	}
 
@@ -525,6 +511,85 @@ int numberOfBridgesCanBeSatisfied(Game* g, int id) {
 		return 0;
 }
 
+/*
+ * Procedure of 'checkIfIsolated' function.
+ * Returns the number of visited islands.
+ */
+int isolatedProcedure(Game* g, int id) {
+	g->visited[id] = g->islands[id].current_value + 1;
+
+	int sum = 0;
+
+	// UP
+	if (g->islands[id].bridges[0] &&
+		g->islands[id].bridges[0]->used > 0) {
+		if (id == g->islands[id].bridges[0]->island_a->id &&
+			g->visited[g->islands[id].bridges[0]->island_b->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[0]->island_b->id);
+		else if (g->visited[g->islands[id].bridges[0]->island_a->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[0]->island_a->id);
+	}
+
+	// DOWN
+	if (g->islands[id].bridges[1] &&
+		g->islands[id].bridges[1]->used > 0) {
+		if (id == g->islands[id].bridges[1]->island_a->id &&
+			g->visited[g->islands[id].bridges[1]->island_b->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[1]->island_b->id);
+		else if (g->visited[g->islands[id].bridges[1]->island_a->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[1]->island_a->id);
+	}
+
+	// LEFT
+	if (g->islands[id].bridges[2] &&
+		g->islands[id].bridges[2]->used > 0) {
+		if (id == g->islands[id].bridges[2]->island_a->id &&
+			g->visited[g->islands[id].bridges[2]->island_b->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[2]->island_b->id);
+		else if (g->visited[g->islands[id].bridges[2]->island_a->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[2]->island_a->id);
+	}
+
+	// RIGHT
+	if (g->islands[id].bridges[3] &&
+		g->islands[id].bridges[3]->used > 0) {
+		if (id == g->islands[id].bridges[3]->island_a->id &&
+			g->visited[g->islands[id].bridges[3]->island_b->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[3]->island_b->id);
+		else if (g->visited[g->islands[id].bridges[3]->island_a->id] == 0)
+			sum +=
+				isolatedProcedure(g, g->islands[id].bridges[3]->island_a->id);
+	}
+
+	return sum + 1;
+}
+
+/*
+ * Checks if the subgraph with g->islands[id] forms an isolated component
+ * Returns 1 if true, 0 otherwise.
+ */
+int isolated(Game* g, int id) {
+	for (int i = 0; i < g->n_islands; i++)
+		g->visited[i] = 0;
+
+	int n_visited = isolatedProcedure(g, id);
+
+	if (n_visited == g->n_islands)
+		return 0;
+
+	for (int i = 0; i < g->n_islands; i++)
+		if (g->visited[i] > 1)
+			return 0;
+
+	return 1;
+}
 
 // Struct used in function below ('greedy')
 typedef struct {
@@ -566,14 +631,21 @@ void greedy(Game* g) {
 
 			if (can_add_bridge) {
 				g->placed_bridges[g->n_placed_bridges++] = ids[i].id;
-				g->bridges[ids[i].id].island_a->current_value--;
-				g->bridges[ids[i].id].island_b->current_value--;
+
+				if (!isolated(g, g->bridges[ids[i].id].island_a->id)) {
+					g->bridges[ids[i].id].island_a->current_value--;
+					g->bridges[ids[i].id].island_b->current_value--;
+					g->bridges[ids[i].id].used++;
+				}
+				else
+					g->n_placed_bridges--;
 			}
 		}
 	}
 
 #ifndef NDEBUG
-	printf("First for added: %d\n", g->n_placed_bridges);
+	printf("First 'for' added: %d\n", g->n_placed_bridges);
+	print(g);
 #endif	// NDEBUG
 
 	int second_for_cont = g->n_placed_bridges;
@@ -584,11 +656,12 @@ void greedy(Game* g) {
 			g->placed_bridges[g->n_placed_bridges++] = ids[i].id;
 			g->bridges[ids[i].id].island_a->current_value--;
 			g->bridges[ids[i].id].island_b->current_value--;
+			g->bridges[ids[i].id].used++;
 		}
 	}
 
 #ifndef NDEBUG
-	printf("Second for added: %d\n", g->n_placed_bridges - second_for_cont);
+	printf("Second 'for' added: %d\n", g->n_placed_bridges - second_for_cont);
 #endif	// NDEBUG
 
 	free(ids);
@@ -637,6 +710,13 @@ void clear(Game* g) {
 #endif	// NDEBUG
 
 	free(g->islands);
+
+#ifndef NDEBUG
+	puts("Free visited");
+	fflush(stdout);
+#endif	// NDEBUG
+
+	free(g->visited);
 }
 
 

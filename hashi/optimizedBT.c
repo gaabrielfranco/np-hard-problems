@@ -894,5 +894,7 @@ int main() {
 	play(&game);
 	clear(&game);
 
+	puts("\nDone");
+
 	return 0;
 }
