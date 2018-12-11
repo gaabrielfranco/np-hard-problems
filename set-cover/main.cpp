@@ -1,22 +1,44 @@
 #include <algorithm>
+#include <chrono>
 #include <climits>
+#include <cstring>
 #include <iostream>
 #include <set>
 #include <vector>
 
-size_t calc_cost(size_t* costs, size_t m, std::vector<size_t> subset)
+typedef std::chrono::high_resolution_clock Clock;
+
+/*
+    Calculates the cost of a MCC solution
+    Params:
+        - G: graph
+        - n: number of elements
+        - m: number of subsets
+        - subset: MCC solution
+*/
+
+size_t calc_cost(size_t* costs, size_t m, std::vector<size_t>& subset)
 {
     size_t total_cost = 0;
     for (size_t i = 0; i < subset.size(); i++)
     {
-        total_cost += costs[subset[i] - 1];
+        total_cost += costs[subset[i]];
     }
 
     return total_cost;
 }
 
-bool is_solution(std::vector<std::vector<size_t>> G, size_t n, size_t m,
-                 std::vector<size_t> subset)
+/*
+    Checks if a subset is a MCC solution
+    Params:
+        - G: graph
+        - n: number of elements
+        - m: number of subsets
+        - subset: possible MCC solution
+*/
+
+bool is_solution(std::vector<std::vector<size_t>>& G, size_t n, size_t m,
+                 std::vector<size_t>& subset)
 {
     bool visited[n] = {false};
 
@@ -39,12 +61,22 @@ bool is_solution(std::vector<std::vector<size_t>> G, size_t n, size_t m,
     return true;
 }
 
-void gen_subsets(std::vector<std::vector<size_t>> G, size_t n, size_t m,
-                 size_t* costs)
+/*
+    MCC solver using a brute force algorithm
+    Params:
+        - G: graph
+        - n: number of elements
+        - m: number of subsets
+        - costs: array of costs of each subset
+*/
+
+void brute_force_solver(std::vector<std::vector<size_t>>& G, size_t n, size_t m,
+                        size_t* costs)
 {
     std::vector<size_t> subset, min_subset;
     size_t min_cost = ULLONG_MAX;
 
+    // Generates all subsets
     for (size_t i = 0; i < (1 << m); i++)
     {
         for (size_t j = 0; j < m; j++)
@@ -78,43 +110,22 @@ void gen_subsets(std::vector<std::vector<size_t>> G, size_t n, size_t m,
     std::cout << min_cost << std::endl;
 }
 
-int main()
+/*
+    MCC solver using a greedy algorithm
+    Params:
+        - G_reverse: graph
+        - n: number of elements
+        - m: number of subsets
+        - costs: array of costs of each subset
+*/
+
+void greedy_solver(std::vector<std::vector<size_t>>& G,
+                   std::vector<std::vector<size_t>>& G_reverse, size_t n,
+                   size_t m, size_t* costs)
 {
-    size_t n, m, element;
-    char c;
-
-    scanf("%zu %zu", &n, &m);
-    std::vector<std::vector<size_t>> G;
-    std::vector<std::vector<size_t>> G_reverse;
-    size_t* costs = (size_t*)malloc(m * sizeof(size_t));
-    std::vector<size_t> v;
     std::set<size_t> greedy_sol;
+    std::vector<size_t> v;
 
-    // Brute force solution
-    for (size_t i = 0; i < m; i++)
-    {
-        while (scanf("%zu%c", &element, &c))
-        {
-            v.push_back(element);
-
-            if (c == '\n')
-            {
-                G.push_back(v);
-                v.clear();
-                break;
-            }
-        }
-    }
-
-    for (size_t i = 0; i < m; i++)
-    {
-        scanf("%zu", &costs[i]);
-    }
-
-    std::cout << "\nUsing Brute Force\n";
-    gen_subsets(G, n, m, costs);
-
-    // Greedy solution
     for (size_t i = 0; i < n; i++)
     {
         G_reverse.push_back(v);
@@ -131,7 +142,6 @@ int main()
             }
             else
             {
-                // G_reverse[G[i][j] - 1].push_back(i);
                 bool was_inserted = false;
 
                 // Putting the subset ordered by cost
@@ -170,5 +180,76 @@ int main()
     }
     std::cout << "} with cost = ";
     std::cout << min_cost << std::endl;
+}
+
+int main(int argc, char** argv)
+{
+    size_t n, m, element;
+    char c;
+    std::vector<std::vector<size_t>> G;
+    std::vector<std::vector<size_t>> G_reverse;
+    size_t costs[1000];
+    std::vector<size_t> v;
+
+    if (argc == 1 ||
+        (argc == 2 && (strcmp(argv[1], "-bf") && strcmp(argv[1], "-gr") &&
+                       strcmp(argv[1], "-all"))))
+    {
+        std::cout
+            << "-bf: Executes the brute force algorithm\n-gr: Executes the "
+               "greedy algorithm\n-all: Executes both algorithms\n";
+        return 0;
+    }
+
+    // Input
+    scanf("%zu %zu", &n, &m);
+
+    for (size_t i = 0; i < m; i++)
+    {
+        while (scanf("%zu%c", &element, &c))
+        {
+            v.push_back(element);
+
+            if (c == '\n')
+            {
+                G.push_back(v);
+                v.clear();
+                break;
+            }
+        }
+    }
+
+    for (size_t i = 0; i < m; i++)
+    {
+        std::cin >> costs[i];
+    }
+
+    if (!strcmp(argv[1], "-bf") || !strcmp(argv[1], "-all"))
+    {
+        // Brute force solution
+        std::cout << "\nUsing Brute Force\n";
+        auto start = Clock::now();
+        brute_force_solver(G, n, m, costs);
+        auto end = Clock::now();
+        std::cout << "Brute Force duration: ";
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         end - start)
+                         .count();
+        std::cout << "ms\n";
+    }
+
+    if (!strcmp(argv[1], "-gr") || !strcmp(argv[1], "-all"))
+    {
+        // Greedy solution
+        auto start = Clock::now();
+        greedy_solver(G, G_reverse, n, m, costs);
+        auto end = Clock::now();
+        std::cout << "Greedy duration: ";
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         end - start)
+                         .count();
+        std::cout << "ms\n";
+    }
+
     return 0;
 }
