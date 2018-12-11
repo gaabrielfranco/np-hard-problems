@@ -3,14 +3,14 @@
  *                                                                            *
  * Greedy hashiwokakero 'solution'.                                           *
  *   - Bridge intersections are calculated first.                             *
- *   - The bridges are added to the board by its number of intersections      *
- *     (lower first).                                                         *
+ *   - The bridges are added to the board by its number of intersections.     *
  *                                                                            *
  *****************************************************************************/
 
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 
 struct bridge;
@@ -321,6 +321,10 @@ void create(Game* g) {
 	}
 
 	g->total_bridges >>= 1; // Bridges were counted twice
+
+#ifndef NDEBUG
+	printf("Number of bridges in solution: %d\n\n", g->total_bridges);
+#endif	// NDEBUG
 
 	findNeighbours(g);
 	calcIntersections(g);
@@ -731,13 +735,25 @@ int main() {
 	Game game;
 
 	create(&game);
+
+#if defined (NDEBUG)
+	clock_t start, end;
+	start = clock();
+#endif	// NDEBUG
+
 	play(&game);
+
+#if defined (NDEBUG)
+	end = clock();
+
+	printf("Time taken: %lf\n", ((double)(end - start)) / CLOCKS_PER_SEC);
+	printf("Bridges placed: %d/%d\n",
+		game.n_placed_bridges, game.total_bridges);
+#endif	// NDEBUG
+
 	clear(&game);
 
-#ifndef NDEBUG
-	puts("\nClean execution test");
-	fflush(stdout);
-#endif	// NDEBUG
+	puts("\nDone");
 
 	return 0;
 }

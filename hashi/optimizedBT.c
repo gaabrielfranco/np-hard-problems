@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 
 typedef struct {
@@ -50,10 +51,6 @@ inline int min(int a, int b) {
 	return a < b ? a : b;
 }
 
-inline int max(int a, int b) {
-	return a > b ? a : b;
-}
-
 /*
  * Finds each island neighbours for faster queries
  */
@@ -90,9 +87,11 @@ void findneighbours(Game* g) {
 
 		g->neighbour_ids[i][RIGHT] = g->board[l][c];
 
+#ifndef NDEBUG
 		printf("%3d: %3d %3d %3d %3d\n", i, g->neighbour_ids[i][UP],
 			g->neighbour_ids[i][DOWN], g->neighbour_ids[i][LEFT],
 			g->neighbour_ids[i][RIGHT]);
+#endif	// NDEBUG
 	}
 }
 
@@ -541,7 +540,9 @@ int backtracking(Game* g, int id) {
 		if (result == 1) {
 			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
+#ifndef NDEBUG
 				print(g);
+#endif	// NDEBUG
 
 				if (backtracking(g, id) == 1)
 					return 1;
@@ -560,7 +561,9 @@ int backtracking(Game* g, int id) {
 		if (result == 1) {
 			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
+#ifndef NDEBUG
 				print(g);
+#endif	// NDEBUG
 				
 				if (backtracking(g, id) == 1)
 					return 1;
@@ -579,7 +582,9 @@ int backtracking(Game* g, int id) {
 		if (result == 1) {
 			if (isolated(g, id) == 0) {
 				// If edge didn't make a isolated component
+#ifndef NDEBUG
 				print(g);
+#endif	// NDEBUG
 
 				if (backtracking(g, id) == 1)
 					return 1;
@@ -597,8 +602,10 @@ int backtracking(Game* g, int id) {
 
 		if (result == 1) {
 			if (isolated(g, id) == 0) {
-				// If edge didn't make a isolated component
+				// If edge didn't make a isolated component	
+#ifndef NDEBUG
 				print(g);
+#endif	// NDEBUG
 
 				if (backtracking(g, id) == 1)
 					return 1;
@@ -609,7 +616,9 @@ int backtracking(Game* g, int id) {
 	}
 
 	if (id < g->n_islands - 1)
-		backtracking(g, id + 1);
+		return backtracking(g, id + 1);
+
+	return 0;
 }
 
 /*
@@ -857,8 +866,10 @@ void addObviousBridges(Game* g) {
 			}
 		}
 
+#ifndef NDEBUG
 		printf("%d\n", not_modified);
 		print(g);
+#endif	// NDEBUG
 	}
 	while (not_modified < g->n_islands);
 }
@@ -867,7 +878,6 @@ void addObviousBridges(Game* g) {
  * Solves the game.
  */
 void play(Game* g) {
-	print(g);
 	addObviousBridges(g);
 	puts("\nObvious bridges added\n"); // To find in solution with 'ctrl + f'
 	backtracking(g, 0);
@@ -891,7 +901,24 @@ int main() {
 	Game game;
 
 	create(&game);
+	print(&game);
+
+#if defined (NDEBUG)
+	clock_t start, end;
+	start = clock();
+#endif	// NDEBUG
+
 	play(&game);
+
+#if defined (NDEBUG)
+	end = clock();
+
+	printf("Time taken: %lf\n", ((double)(end - start)) / CLOCKS_PER_SEC);
+	printf("Bridges placed: %d/%d\n",
+		game.n_placed_bridges, game.n_bridges);
+#endif	// NDEBUG
+
+	print(&game);
 	clear(&game);
 
 	puts("\nDone");
